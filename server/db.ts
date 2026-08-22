@@ -1,7 +1,8 @@
-import { eq } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users } from "../drizzle/schema";
+import { auditEntries, InsertUser, merchantPolicies, merchantProfiles, users } from "../drizzle/schema";
 import { ENV } from './_core/env';
+import { buildAuditEntry, type AuditActorType } from "./recovery/audit";
 
 let _db: ReturnType<typeof drizzle> | null = null;
 
@@ -89,4 +90,68 @@ export async function getUserByOpenId(openId: string) {
   return result.length > 0 ? result[0] : undefined;
 }
 
-// TODO: add feature queries here as your schema grows.
+export async function ensureMerchantForUser(userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database is unavailable");
+
+  const existing = await db.select().from(merchantProfiles).where(eq(merchantProfiles.userId, userId)).limit(1);
+  if (existing[0]) return existing[0];
+
+  await db.insert(merchantProfiles).values({ userId, displayName: "Recovery Demo Merchant" });
+  const created = await db.select().from(merchantProfiles).where(eq(merchantProfiles.userId, userId)).limit(1);
+  const merchant = created[0];
+  if (!merchant) throw new Error("Could not create merchant profile");
+
+  await db.insert(merchantPolicies).values({
+    merchantId: merchant.id,
+    version: 1,
+    name: "Default guarded recovery policy",
+    eligibleFailureTypesJson: JSON.stringify(["TEMPORARY_DECLINE", "CUSTOMER_FRICTION"]),
+    permittedActionTypesJson: JSON.stringify(["SIMULATED_RETRY", "PAYMENT_LINK_FALLBACK", "REMINDER"]),
+    autoActionAmountCapPaise: 50_000,
+    maxRetries: 2,
+    requiresConsent: true,
+    minimumConfidenceBps: 8_000,
+    reminderMaxContacts: 2,
+    escalationRulesJson: JSON.stringify({ highValue: "APPROVAL", ambiguous: "APPROVAL", lowConfidence: "APPROVAL" }),
+    stoppingConditionsJson: JSON.stringify(["CONSENT_REQUIRED", "RETRY_LIMIT_REACHED", "PAYMENT_ALREADY_RESOLVED"]),
+  });
+
+  return merchant;
+}
+
+export async function getActivePolicyForMerchant(merchantId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database is unavailable");
+  const policies = await db.select().from(merchantPolicies)
+    .where(eq(merchantPolicies.merchantId, merchantId))
+    .orderBy(desc(merchantPolicies.version));
+  return policies.find(policy => policy.isActive) ?? null;
+}
+
+export async function appendAuditEntry(input: {
+  recoveryCaseId: number;
+  actorType: AuditActorType;
+  eventType: string;
+  payload: Record<string, unknown>;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("Database is unavailable");
+  const prior = await db.select().from(auditEntries)
+    .where(eq(auditEntries.recoveryCaseId, input.recoveryCaseId))
+    .orderBy(desc(auditEntries.sequence))
+    .limit(1);
+  const previous = prior[0] ?? null;
+  const sequence = previous ? previous.sequence + 1 : 1;
+  const built = buildAuditEntry({ ...input, sequence, previousHash: previous?.entryHash ?? null });
+  await db.insert(auditEntries).values({
+    recoveryCaseId: input.recoveryCaseId,
+    sequence,
+    actorType: input.actorType,
+    eventType: input.eventType,
+    payloadJson: built.payloadJson,
+    previousHash: previous?.entryHash ?? null,
+    entryHash: built.entryHash,
+  });
+  return { sequence, ...built };
+}

@@ -1,0 +1,1412 @@
+{
+  "version": "5",
+  "dialect": "mysql",
+  "id": "ee6bb03b-5453-4d55-9a7c-3f776d5bd38a",
+  "prevId": "533b2064-c91f-4a21-a47c-76314ba2bb7f",
+  "tables": {
+    "approvalRequests": {
+      "name": "approvalRequests",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "recoveryCaseId": {
+          "name": "recoveryCaseId",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "recommendedAction": {
+          "name": "recommendedAction",
+          "type": "enum('NO_ACTION','SIMULATED_RETRY','PAYMENT_LINK_FALLBACK','REMINDER','HUMAN_ESCALATION')",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "status": {
+          "name": "status",
+          "type": "enum('PENDING','APPROVED','REJECTED','EXPIRED')",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'PENDING'"
+        },
+        "rationale": {
+          "name": "rationale",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "requestedAt": {
+          "name": "requestedAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(now())"
+        },
+        "expiresAt": {
+          "name": "expiresAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "decidedByUserId": {
+          "name": "decidedByUserId",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "decisionReason": {
+          "name": "decisionReason",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "decidedAt": {
+          "name": "decidedAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "approval_queue_idx": {
+          "name": "approval_queue_idx",
+          "columns": [
+            "status",
+            "expiresAt"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {
+        "approvalRequests_id": {
+          "name": "approvalRequests_id",
+          "columns": [
+            "id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "checkConstraint": {}
+    },
+    "auditEntries": {
+      "name": "auditEntries",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "recoveryCaseId": {
+          "name": "recoveryCaseId",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "sequence": {
+          "name": "sequence",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "actorType": {
+          "name": "actorType",
+          "type": "enum('SYSTEM','MERCHANT','RAZORPAY','AI')",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "eventType": {
+          "name": "eventType",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "payloadJson": {
+          "name": "payloadJson",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "previousHash": {
+          "name": "previousHash",
+          "type": "varchar(64)",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "entryHash": {
+          "name": "entryHash",
+          "type": "varchar(64)",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "createdAt": {
+          "name": "createdAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(now())"
+        }
+      },
+      "indexes": {
+        "audit_case_sequence_unique": {
+          "name": "audit_case_sequence_unique",
+          "columns": [
+            "recoveryCaseId",
+            "sequence"
+          ],
+          "isUnique": true
+        },
+        "audit_case_created_idx": {
+          "name": "audit_case_created_idx",
+          "columns": [
+            "recoveryCaseId",
+            "createdAt"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {
+        "auditEntries_id": {
+          "name": "auditEntries_id",
+          "columns": [
+            "id"
+          ]
+        }
+      },
+      "uniqueConstraints": {
+        "auditEntries_entryHash_unique": {
+          "name": "auditEntries_entryHash_unique",
+          "columns": [
+            "entryHash"
+          ]
+        }
+      },
+      "checkConstraint": {}
+    },
+    "diagnoses": {
+      "name": "diagnoses",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "recoveryCaseId": {
+          "name": "recoveryCaseId",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "failureCause": {
+          "name": "failureCause",
+          "type": "enum('TEMPORARY_DECLINE','CUSTOMER_FRICTION','INSUFFICIENT_CONTEXT','UNSUPPORTED')",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "confidenceBps": {
+          "name": "confidenceBps",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "evidenceJson": {
+          "name": "evidenceJson",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "explanation": {
+          "name": "explanation",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "recommendedAction": {
+          "name": "recommendedAction",
+          "type": "enum('NO_ACTION','SIMULATED_RETRY','PAYMENT_LINK_FALLBACK','REMINDER','HUMAN_ESCALATION')",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "uncertaintyReason": {
+          "name": "uncertaintyReason",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "modelId": {
+          "name": "modelId",
+          "type": "varchar(120)",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "promptVersion": {
+          "name": "promptVersion",
+          "type": "varchar(40)",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "createdAt": {
+          "name": "createdAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(now())"
+        }
+      },
+      "indexes": {
+        "diagnosis_case_idx": {
+          "name": "diagnosis_case_idx",
+          "columns": [
+            "recoveryCaseId"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {
+        "diagnoses_id": {
+          "name": "diagnoses_id",
+          "columns": [
+            "id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "checkConstraint": {}
+    },
+    "evaluationResults": {
+      "name": "evaluationResults",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "evaluationRunId": {
+          "name": "evaluationRunId",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "recoveryCaseId": {
+          "name": "recoveryCaseId",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "comparator": {
+          "name": "comparator",
+          "type": "enum('NO_ACTION','SINGLE_RETRY','PAYMENT_LINK','RECOVERFLOW')",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "split": {
+          "name": "split",
+          "type": "enum('DEVELOPMENT','HELD_OUT')",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "outcome": {
+          "name": "outcome",
+          "type": "enum('RECOVERED','NOT_RECOVERED','FALSE_POSITIVE','EXCEPTION','STOPPED')",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "recoveredAmountPaise": {
+          "name": "recoveredAmountPaise",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        },
+        "falsePositiveCostPaise": {
+          "name": "falsePositiveCostPaise",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        },
+        "exceptionClass": {
+          "name": "exceptionClass",
+          "type": "varchar(120)",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "createdAt": {
+          "name": "createdAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(now())"
+        }
+      },
+      "indexes": {
+        "evaluation_result_run_idx": {
+          "name": "evaluation_result_run_idx",
+          "columns": [
+            "evaluationRunId",
+            "comparator",
+            "split"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {
+        "evaluationResults_id": {
+          "name": "evaluationResults_id",
+          "columns": [
+            "id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "checkConstraint": {}
+    },
+    "evaluationRuns": {
+      "name": "evaluationRuns",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "merchantId": {
+          "name": "merchantId",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "policyVersion": {
+          "name": "policyVersion",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "datasetVersion": {
+          "name": "datasetVersion",
+          "type": "varchar(80)",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "seed": {
+          "name": "seed",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "runType": {
+          "name": "runType",
+          "type": "enum('DEVELOPMENT','HELD_OUT','DEMO')",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "status": {
+          "name": "status",
+          "type": "enum('PENDING','RUNNING','COMPLETED','FAILED')",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "startedAt": {
+          "name": "startedAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "completedAt": {
+          "name": "completedAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "createdAt": {
+          "name": "createdAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(now())"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {
+        "evaluationRuns_id": {
+          "name": "evaluationRuns_id",
+          "columns": [
+            "id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "checkConstraint": {}
+    },
+    "merchantPolicies": {
+      "name": "merchantPolicies",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "merchantId": {
+          "name": "merchantId",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "version": {
+          "name": "version",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "name": {
+          "name": "name",
+          "type": "varchar(120)",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "isActive": {
+          "name": "isActive",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": true
+        },
+        "eligibleFailureTypesJson": {
+          "name": "eligibleFailureTypesJson",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "permittedActionTypesJson": {
+          "name": "permittedActionTypesJson",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "autoActionAmountCapPaise": {
+          "name": "autoActionAmountCapPaise",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "maxRetries": {
+          "name": "maxRetries",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "requiresConsent": {
+          "name": "requiresConsent",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": true
+        },
+        "minimumConfidenceBps": {
+          "name": "minimumConfidenceBps",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "reminderMaxContacts": {
+          "name": "reminderMaxContacts",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "escalationRulesJson": {
+          "name": "escalationRulesJson",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "stoppingConditionsJson": {
+          "name": "stoppingConditionsJson",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "createdAt": {
+          "name": "createdAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(now())"
+        }
+      },
+      "indexes": {
+        "merchant_policy_version_unique": {
+          "name": "merchant_policy_version_unique",
+          "columns": [
+            "merchantId",
+            "version"
+          ],
+          "isUnique": true
+        },
+        "merchant_policy_active_idx": {
+          "name": "merchant_policy_active_idx",
+          "columns": [
+            "merchantId",
+            "isActive"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {
+        "merchantPolicies_id": {
+          "name": "merchantPolicies_id",
+          "columns": [
+            "id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "checkConstraint": {}
+    },
+    "merchantProfiles": {
+      "name": "merchantProfiles",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "userId": {
+          "name": "userId",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "displayName": {
+          "name": "displayName",
+          "type": "varchar(160)",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "createdAt": {
+          "name": "createdAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(now())"
+        },
+        "updatedAt": {
+          "name": "updatedAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "onUpdate": true,
+          "default": "(now())"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {
+        "merchantProfiles_id": {
+          "name": "merchantProfiles_id",
+          "columns": [
+            "id"
+          ]
+        }
+      },
+      "uniqueConstraints": {
+        "merchantProfiles_userId_unique": {
+          "name": "merchantProfiles_userId_unique",
+          "columns": [
+            "userId"
+          ]
+        }
+      },
+      "checkConstraint": {}
+    },
+    "paymentEvents": {
+      "name": "paymentEvents",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "merchantId": {
+          "name": "merchantId",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "sourceEventId": {
+          "name": "sourceEventId",
+          "type": "varchar(128)",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "sourceType": {
+          "name": "sourceType",
+          "type": "enum('WEBHOOK','BATCH','MANUAL')",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "eventType": {
+          "name": "eventType",
+          "type": "varchar(80)",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "rawPayloadDigest": {
+          "name": "rawPayloadDigest",
+          "type": "varchar(64)",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "signatureStatus": {
+          "name": "signatureStatus",
+          "type": "enum('VERIFIED','NOT_APPLICABLE','INVALID','PENDING')",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "externalPaymentId": {
+          "name": "externalPaymentId",
+          "type": "varchar(128)",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "amountPaise": {
+          "name": "amountPaise",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "currency": {
+          "name": "currency",
+          "type": "varchar(12)",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'INR'"
+        },
+        "customerIdentity": {
+          "name": "customerIdentity",
+          "type": "varchar(320)",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "consentGranted": {
+          "name": "consentGranted",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": false
+        },
+        "failureType": {
+          "name": "failureType",
+          "type": "enum('TEMPORARY_DECLINE','CUSTOMER_FRICTION','INSUFFICIENT_CONTEXT','UNSUPPORTED')",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "failureCode": {
+          "name": "failureCode",
+          "type": "varchar(120)",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "payloadJson": {
+          "name": "payloadJson",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "occurredAt": {
+          "name": "occurredAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "receivedAt": {
+          "name": "receivedAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(now())"
+        }
+      },
+      "indexes": {
+        "payment_event_source_unique": {
+          "name": "payment_event_source_unique",
+          "columns": [
+            "merchantId",
+            "sourceEventId"
+          ],
+          "isUnique": true
+        },
+        "payment_event_payment_idx": {
+          "name": "payment_event_payment_idx",
+          "columns": [
+            "merchantId",
+            "externalPaymentId"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {
+        "paymentEvents_id": {
+          "name": "paymentEvents_id",
+          "columns": [
+            "id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "checkConstraint": {}
+    },
+    "policyEvaluations": {
+      "name": "policyEvaluations",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "recoveryCaseId": {
+          "name": "recoveryCaseId",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "policyId": {
+          "name": "policyId",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "policyVersion": {
+          "name": "policyVersion",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "eligible": {
+          "name": "eligible",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "requiresApproval": {
+          "name": "requiresApproval",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "matchedRulesJson": {
+          "name": "matchedRulesJson",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "permittedActionTypesJson": {
+          "name": "permittedActionTypesJson",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "stoppingReason": {
+          "name": "stoppingReason",
+          "type": "varchar(160)",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "createdAt": {
+          "name": "createdAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(now())"
+        }
+      },
+      "indexes": {
+        "policy_evaluation_case_idx": {
+          "name": "policy_evaluation_case_idx",
+          "columns": [
+            "recoveryCaseId"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {
+        "policyEvaluations_id": {
+          "name": "policyEvaluations_id",
+          "columns": [
+            "id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "checkConstraint": {}
+    },
+    "recoveryActions": {
+      "name": "recoveryActions",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "recoveryCaseId": {
+          "name": "recoveryCaseId",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "actionType": {
+          "name": "actionType",
+          "type": "enum('NO_ACTION','SIMULATED_RETRY','PAYMENT_LINK_FALLBACK','REMINDER','HUMAN_ESCALATION')",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "status": {
+          "name": "status",
+          "type": "enum('PLANNED','DISPATCHED','SUCCEEDED','FAILED','EXPIRED','SKIPPED')",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "idempotencyKey": {
+          "name": "idempotencyKey",
+          "type": "varchar(128)",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "actionPayloadJson": {
+          "name": "actionPayloadJson",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "attemptNumber": {
+          "name": "attemptNumber",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "providerReference": {
+          "name": "providerReference",
+          "type": "varchar(160)",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "expiresAt": {
+          "name": "expiresAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "completedAt": {
+          "name": "completedAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "createdAt": {
+          "name": "createdAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(now())"
+        }
+      },
+      "indexes": {
+        "recovery_action_case_idx": {
+          "name": "recovery_action_case_idx",
+          "columns": [
+            "recoveryCaseId",
+            "createdAt"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {
+        "recoveryActions_id": {
+          "name": "recoveryActions_id",
+          "columns": [
+            "id"
+          ]
+        }
+      },
+      "uniqueConstraints": {
+        "recoveryActions_idempotencyKey_unique": {
+          "name": "recoveryActions_idempotencyKey_unique",
+          "columns": [
+            "idempotencyKey"
+          ]
+        }
+      },
+      "checkConstraint": {}
+    },
+    "recoveryCases": {
+      "name": "recoveryCases",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "caseReference": {
+          "name": "caseReference",
+          "type": "varchar(40)",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "merchantId": {
+          "name": "merchantId",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "paymentEventId": {
+          "name": "paymentEventId",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "policyId": {
+          "name": "policyId",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "policyVersion": {
+          "name": "policyVersion",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "source": {
+          "name": "source",
+          "type": "enum('WEBHOOK','BATCH','MANUAL')",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "state": {
+          "name": "state",
+          "type": "enum('RECEIVED','INGESTED','POLICY_EVALUATING','DIAGNOSING','ACTION_DECIDED','APPROVAL_PENDING','ACTION_QUEUED','ACTION_ATTEMPTED','AWAITING_OUTCOME','RECOVERED','STOPPED','EXCEPTION','REJECTED','DUPLICATE_IGNORED')",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "amountSnapshotPaise": {
+          "name": "amountSnapshotPaise",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "customerIdentitySnapshot": {
+          "name": "customerIdentitySnapshot",
+          "type": "varchar(320)",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "externalPaymentIdSnapshot": {
+          "name": "externalPaymentIdSnapshot",
+          "type": "varchar(128)",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "retryCount": {
+          "name": "retryCount",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        },
+        "reminderCount": {
+          "name": "reminderCount",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        },
+        "riskFlagsJson": {
+          "name": "riskFlagsJson",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "terminalReason": {
+          "name": "terminalReason",
+          "type": "varchar(160)",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "createdAt": {
+          "name": "createdAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(now())"
+        },
+        "updatedAt": {
+          "name": "updatedAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "onUpdate": true,
+          "default": "(now())"
+        }
+      },
+      "indexes": {
+        "recovery_case_payment_event_unique": {
+          "name": "recovery_case_payment_event_unique",
+          "columns": [
+            "paymentEventId"
+          ],
+          "isUnique": true
+        },
+        "recovery_case_queue_idx": {
+          "name": "recovery_case_queue_idx",
+          "columns": [
+            "merchantId",
+            "state",
+            "createdAt"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {
+        "recoveryCases_id": {
+          "name": "recoveryCases_id",
+          "columns": [
+            "id"
+          ]
+        }
+      },
+      "uniqueConstraints": {
+        "recoveryCases_caseReference_unique": {
+          "name": "recoveryCases_caseReference_unique",
+          "columns": [
+            "caseReference"
+          ]
+        }
+      },
+      "checkConstraint": {}
+    },
+    "users": {
+      "name": "users",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "openId": {
+          "name": "openId",
+          "type": "varchar(64)",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "email": {
+          "name": "email",
+          "type": "varchar(320)",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "loginMethod": {
+          "name": "loginMethod",
+          "type": "varchar(64)",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "role": {
+          "name": "role",
+          "type": "enum('user','admin')",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'user'"
+        },
+        "createdAt": {
+          "name": "createdAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(now())"
+        },
+        "updatedAt": {
+          "name": "updatedAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "onUpdate": true,
+          "default": "(now())"
+        },
+        "lastSignedIn": {
+          "name": "lastSignedIn",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(now())"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {
+        "users_id": {
+          "name": "users_id",
+          "columns": [
+            "id"
+          ]
+        }
+      },
+      "uniqueConstraints": {
+        "users_openId_unique": {
+          "name": "users_openId_unique",
+          "columns": [
+            "openId"
+          ]
+        }
+      },
+      "checkConstraint": {}
+    },
+    "webhookReceipts": {
+      "name": "webhookReceipts",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "merchantId": {
+          "name": "merchantId",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "sourceEventId": {
+          "name": "sourceEventId",
+          "type": "varchar(128)",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "rawPayloadDigest": {
+          "name": "rawPayloadDigest",
+          "type": "varchar(64)",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "signatureStatus": {
+          "name": "signatureStatus",
+          "type": "enum('VERIFIED','INVALID','PENDING')",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "processingStatus": {
+          "name": "processingStatus",
+          "type": "enum('RECEIVED','REJECTED','DUPLICATE','PROCESSED','EXCEPTION')",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "receivedAt": {
+          "name": "receivedAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(now())"
+        }
+      },
+      "indexes": {
+        "webhook_receipt_source_unique": {
+          "name": "webhook_receipt_source_unique",
+          "columns": [
+            "merchantId",
+            "sourceEventId"
+          ],
+          "isUnique": true
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {
+        "webhookReceipts_id": {
+          "name": "webhookReceipts_id",
+          "columns": [
+            "id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "checkConstraint": {}
+    }
+  },
+  "views": {},
+  "_meta": {
+    "schemas": {},
+    "tables": {},
+    "columns": {}
+  },
+  "internal": {
+    "tables": {},
+    "indexes": {}
+  }
+}

@@ -1,0 +1,27 @@
+# Project TODO
+
+- [x] Write and commit the HLD, LLD, API contracts, data model, recovery state machine, test plan, and phased implementation roadmap.
+- [ ] Add merchant recovery-policy persistence and controls for failure eligibility, amount thresholds, retry limits, consent requirements, escalation rules, and stopping conditions.
+- [ ] Implement webhook ingestion with source-event identity, signature-verification boundary, duplicate-event protection, idempotent processing, and failed-event visibility.
+- [x] Implement batch ingestion for reproducible synthetic payment-event replay.
+- [x] Implement the exact manual entry action wording: “review/recover this payment”.
+- [x] Implement hybrid autonomy: auto-run only low-risk policy-approved actions and require merchant approval for high-value, low-confidence, or ambiguous cases.
+- [ ] Implement grounded AI diagnosis with structured outputs that identify likely failure cause, explain evidence, and select only from the policy-approved action set.
+- [x] Enforce immutable orchestrator guardrails that prevent AI from modifying payment amount, customer identity, or merchant policy limits.
+- [x] Implement bounded orchestration for no-action, simulated retry, Payment Link fallback, reminder, and human escalation.
+- [ ] Integrate Razorpay Test Mode Payment Links with expiry, callback handling, signature validation, idempotent outcomes, and clear Test Mode / sandbox labels.
+- [ ] Add Razorpay Test Mode API and webhook credentials later, then verify the isolated live-sandbox adapter against real Payment Link and signed webhook events.
+- [ ] Create an immutable audit trail for events, policy checks, AI rationale, approvals, attempted actions, webhook outcomes, and stopping reasons.
+- [x] Build an elegant merchant operations dashboard for queue status, recovered revenue, recovery rate, action precision, false-positive cost, exceptions, and deterministic-baseline comparison.
+- [x] Build the merchant approval flow and exception queue, including safe no-action and escalation views.
+- [x] Build a reproducible synthetic 200-record batch simulator, a held-out evaluation set, and deliberate demo failure scenarios.
+- [x] Implement deterministic baselines and evaluator calculations for recovery metrics, safety metrics, and exception reporting.
+- [x] Add Vitest coverage for policy decisions, idempotency, state transitions, amount and identity immutability, callbacks, and evaluation metrics.
+- [x] Validate responsive UI behavior, Test Mode labels, and critical recovery flows in the browser.
+- [x] Complete submission-grade documentation and save a project checkpoint after all completed requirements are marked done.
+- [x] Finalize the architecture specification and project tracker in the final checkpoint after all implementation phases are complete.
+- [x] Wire policy planning into webhook, batch, and manual case-processing flows so automatic and approval-required cases make real governed transitions.
+- [x] Implement executable reminder and human-escalation paths plus outcome recording for every bounded action.
+- [x] Replace hardcoded queue summaries with case and evaluator data, including an explicit baseline-comparison panel.
+- [x] Add visible integrated demo playback for duplicate events, invalid signatures, expired links, conflicting outcomes, and missing-consent stops.
+- [x] Implement sandbox Payment Link callback/outcome handling and cover valid, duplicate, conflicting, and terminal-state callbacks with Vitest.

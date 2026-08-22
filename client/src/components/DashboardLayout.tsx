@@ -21,15 +21,17 @@ import {
 } from "@/components/ui/sidebar";
 import { startLogin } from "@/const";
 import { useIsMobile } from "@/hooks/useMobile";
-import { LayoutDashboard, LogOut, PanelLeft, Users } from "lucide-react";
+import { Activity, BarChart3, ClipboardCheck, LayoutDashboard, LogOut, PanelLeft, Settings2 } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
 import { Button } from "./ui/button";
 
 const menuItems = [
-  { icon: LayoutDashboard, label: "Page 1", path: "/" },
-  { icon: Users, label: "Page 2", path: "/some-path" },
+  { icon: LayoutDashboard, label: "Recovery overview", path: "/" },
+  { icon: ClipboardCheck, label: "Review queue", path: "/review-queue" },
+  { icon: Settings2, label: "Recovery policy", path: "/policy" },
+  { icon: BarChart3, label: "Evaluation", path: "/evaluation" },
 ];
 
 const SIDEBAR_WIDTH_KEY = "sidebar-width";
@@ -39,8 +41,10 @@ const MAX_WIDTH = 480;
 
 export default function DashboardLayout({
   children,
+  allowDemo = false,
 }: {
   children: React.ReactNode;
+  allowDemo?: boolean;
 }) {
   const [sidebarWidth, setSidebarWidth] = useState(() => {
     const saved = localStorage.getItem(SIDEBAR_WIDTH_KEY);
@@ -56,7 +60,7 @@ export default function DashboardLayout({
     return <DashboardLayoutSkeleton />
   }
 
-  if (!user) {
+  if (!user && !allowDemo) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="flex flex-col items-center gap-8 p-8 max-w-md w-full">
@@ -88,7 +92,7 @@ export default function DashboardLayout({
         } as CSSProperties
       }
     >
-      <DashboardLayoutContent setSidebarWidth={setSidebarWidth}>
+      <DashboardLayoutContent setSidebarWidth={setSidebarWidth} demoMode={!user && allowDemo}>
         {children}
       </DashboardLayoutContent>
     </SidebarProvider>
@@ -98,11 +102,13 @@ export default function DashboardLayout({
 type DashboardLayoutContentProps = {
   children: React.ReactNode;
   setSidebarWidth: (width: number) => void;
+  demoMode: boolean;
 };
 
 function DashboardLayoutContent({
   children,
   setSidebarWidth,
+  demoMode,
 }: DashboardLayoutContentProps) {
   const { user, logout } = useAuth();
   const [location, setLocation] = useLocation();
@@ -168,8 +174,8 @@ function DashboardLayoutContent({
               </button>
               {!isCollapsed ? (
                 <div className="flex items-center gap-2 min-w-0">
-                  <span className="font-semibold tracking-tight truncate">
-                    Navigation
+                    <span className="font-semibold tracking-tight truncate">
+                      RecoverFlow
                   </span>
                 </div>
               ) : null}
@@ -205,27 +211,34 @@ function DashboardLayoutContent({
                 <button className="flex items-center gap-3 rounded-lg px-1 py-1 hover:bg-accent/50 transition-colors w-full text-left group-data-[collapsible=icon]:justify-center focus:outline-none focus-visible:ring-2 focus-visible:ring-ring">
                   <Avatar className="h-9 w-9 border shrink-0">
                     <AvatarFallback className="text-xs font-medium">
-                      {user?.name?.charAt(0).toUpperCase()}
+                      {demoMode ? "D" : user?.name?.charAt(0).toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex-1 min-w-0 group-data-[collapsible=icon]:hidden">
                     <p className="text-sm font-medium truncate leading-none">
-                      {user?.name || "-"}
+                      {demoMode ? "Demo merchant" : user?.name || "-"}
                     </p>
                     <p className="text-xs text-muted-foreground truncate mt-1.5">
-                      {user?.email || "-"}
+                      {demoMode ? "Sandbox workspace" : user?.email || "-"}
                     </p>
                   </div>
                 </button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
-                <DropdownMenuItem
-                  onClick={logout}
-                  className="cursor-pointer text-destructive focus:text-destructive"
-                >
-                  <LogOut className="mr-2 h-4 w-4" />
-                  <span>Sign out</span>
-                </DropdownMenuItem>
+              <DropdownMenuContent align="end" className="w-52">
+                {demoMode ? (
+                  <DropdownMenuItem disabled>
+                    <Activity className="mr-2 h-4 w-4" />
+                    <span>Sandbox demonstration</span>
+                  </DropdownMenuItem>
+                ) : (
+                  <DropdownMenuItem
+                    onClick={logout}
+                    className="cursor-pointer text-destructive focus:text-destructive"
+                  >
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>Sign out</span>
+                  </DropdownMenuItem>
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
           </SidebarFooter>
