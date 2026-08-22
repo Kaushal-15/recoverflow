@@ -107,6 +107,22 @@ function resetIfNeeded() {
       risk: "Exception",
       candidate: candidate("customer3@merchant.test", "pay_rcv_1038", 18_000, "INSUFFICIENT_CONTEXT", true, 5_400, true),
     }),
+    seedCase({
+      id: "RCV-1044",
+      state: "STOPPED",
+      actionType: "NO_ACTION",
+      reason: "Merchant rejected the proposed recovery route after review. No follow-up action was sent.",
+      risk: "Merchant rejected",
+      candidate: candidate("customer5@merchant.test", "pay_rcv_1044", 64_000, "CUSTOMER_FRICTION", true, 8_100),
+    }),
+    seedCase({
+      id: "RCV-1045",
+      state: "EXCEPTION",
+      actionType: "NO_ACTION",
+      reason: "Incomplete context triggered a policy exemption before customer contact. Human review is optional.",
+      risk: "Exempted by policy",
+      candidate: candidate("contact_1182", "pay_rcv_1045", 27_000, "INSUFFICIENT_CONTEXT", true, 5_000, true),
+    }),
   ];
   entries.forEach(entry => {
     store.set(entry.id, entry);

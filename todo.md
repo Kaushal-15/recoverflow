@@ -51,3 +51,6 @@
 - [x] Add a detailed selected-case evidence view with payment mode, masked IP, failure problem, diagnostic reasoning, policy checks, and bounded recovery context.
 - [x] Add a tabbed review-history view that classifies decisions as approved, rejected, exempted, escalated, stopped, or pending.
 - [x] Validate selected-case detail and review-history interactions on desktop and mobile, then checkpoint the enhanced investigation flow.
+- [x] Add a recovery-queue filter that groups and views cases by decision class, including approved, rejected, exempted, escalated, pending, and stopped.
+- [x] Add a selected-case CSV export that includes explicitly synthetic/Test Mode payment context, diagnosis, policy reading, and classified review history.
+- [x] Add automated tests for decision-class mapping and CSV evidence formatting, then validate the controls on desktop and mobile.
