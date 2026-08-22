@@ -6,7 +6,8 @@ import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { trpc } from "@/lib/trpc";
 import { buildEvidenceCsv, getDecisionClass, getSyntheticEvidence, reviewStyle, type DecisionFilter } from "@/lib/caseEvidence";
-import { AlertCircle, ArrowUpRight, BadgeCheck, CheckCircle2, CircleDollarSign, Clock3, CreditCard, Download, FileCheck2, Laptop, LockKeyhole, MapPin, RefreshCcw, ScanEye, ShieldAlert, ShieldCheck, Sparkles, TrendingUp } from "lucide-react";
+import { filterRecoveryCases, getBulkEligibleIds, getSyntheticActivityDate, isBulkReviewEligible, resolveSelectedCaseId } from "@/lib/caseOperations";
+import { AlertCircle, ArrowUpRight, BadgeCheck, CheckCircle2, CircleDollarSign, Clock3, CreditCard, Download, FileCheck2, Laptop, LockKeyhole, MapPin, RefreshCcw, ScanEye, Search, ShieldAlert, ShieldCheck, Sparkles, TrendingUp, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
 function formatCurrency(paise: number) {
@@ -43,13 +44,36 @@ export default function Home() {
     const requested = new URLSearchParams(window.location.search).get("decision") as DecisionFilter | null;
     return requested && decisionFilters.some(filter => filter.value === requested) ? requested : "ALL";
   });
+  const [searchTerm, setSearchTerm] = useState("");
+  const [activityDate, setActivityDate] = useState("");
+  const [minAmountInr, setMinAmountInr] = useState("");
+  const [maxAmountInr, setMaxAmountInr] = useState("");
+  const [bulkSelection, setBulkSelection] = useState<string[]>([]);
   const data = overview.data;
   const selectedCase = useMemo(() => data?.cases.find(item => item.id === selectedCaseId), [data?.cases, selectedCaseId]);
-  const filteredCases = useMemo(() => (data?.cases ?? []).filter(item => decisionFilter === "ALL" || getDecisionClass(item.state, item.id) === decisionFilter), [data?.cases, decisionFilter]);
+  const filteredCases = useMemo(() => filterRecoveryCases(data?.cases ?? [], { searchTerm, decisionFilter, activityDate, minAmountInr, maxAmountInr }), [data?.cases, searchTerm, decisionFilter, activityDate, minAmountInr, maxAmountInr]);
+  const pendingFilteredCases = useMemo(() => filteredCases.filter(item => isBulkReviewEligible(item.state)), [filteredCases]);
 
   useEffect(() => {
-    if (filteredCases.length && (!selectedCaseId || !filteredCases.some(item => item.id === selectedCaseId))) setSelectedCaseId(filteredCases[0].id);
+    const nextCaseId = resolveSelectedCaseId(selectedCaseId, filteredCases);
+    if (nextCaseId !== selectedCaseId) setSelectedCaseId(nextCaseId);
   }, [filteredCases, selectedCaseId]);
+
+  useEffect(() => {
+    setBulkSelection(current => current.filter(caseId => pendingFilteredCases.some(item => item.id === caseId)));
+  }, [pendingFilteredCases]);
+
+  const toggleBulkCase = (caseId: string) => setBulkSelection(current => current.includes(caseId) ? current.filter(id => id !== caseId) : [...current, caseId]);
+  const applyBulkDecision = async (decision: "APPROVE" | "REJECT") => {
+    const eligibleIds = getBulkEligibleIds(pendingFilteredCases, bulkSelection);
+    if (!eligibleIds.length) return;
+    await Promise.all(eligibleIds.map(caseId => approval.mutateAsync({ caseId, decision })));
+    setBulkSelection([]);
+    await utils.recovery.overview.invalidate();
+  };
+
+  const clearFilters = () => { setSearchTerm(""); setDecisionFilter("ALL"); setActivityDate(""); setMinAmountInr(""); setMaxAmountInr(""); };
+  const filtersActive = Boolean(searchTerm || decisionFilter !== "ALL" || activityDate || minAmountInr || maxAmountInr);
 
   return (
     <DashboardLayout allowDemo>
@@ -85,17 +109,27 @@ export default function Home() {
                     <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Live recovery queue</p>
                     <CardTitle className="mt-1 text-xl">Actions with an explainable next step</CardTitle>
                   </div>
-                  <div className="flex flex-wrap items-center justify-end gap-2"><Badge variant="outline" className="border-sky-200 bg-sky-50 text-sky-700">{filteredCases.length}/{data.cases.length} cases</Badge><label className="sr-only" htmlFor="decision-class-filter">Filter recovery cases by decision class</label><select id="decision-class-filter" value={decisionFilter} onChange={event => setDecisionFilter(event.target.value as DecisionFilter)} className="h-9 rounded-xl border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 outline-none transition-colors focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 dark:border-white/10 dark:bg-slate-900 dark:text-slate-100"><option value="ALL">All classes</option>{decisionFilters.slice(1).map(filter => <option key={filter.value} value={filter.value}>{filter.label}</option>)}</select></div>
+                  <Badge variant="outline" className="border-sky-200 bg-sky-50 text-sky-700">{filteredCases.length}/{data.cases.length} cases</Badge>
                 </CardHeader>
-                <CardContent className="space-y-2">
-                  {filteredCases.length ? filteredCases.map(item => (
-                    <button key={item.id} onClick={() => setSelectedCaseId(item.id)} className={`group grid w-full grid-cols-[1fr_auto] gap-4 rounded-2xl border p-4 text-left transition-all hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md sm:grid-cols-[1.05fr_.75fr_.85fr_auto] ${selectedCaseId === item.id ? "border-sky-300 bg-sky-50/50 shadow-sm" : "border-slate-100 bg-white"}`}>
-                      <div className="min-w-0"><p className="font-semibold text-slate-900">{item.id}</p><p className="mt-1 truncate text-sm text-slate-500">{item.customer}</p></div>
-                      <div className="hidden sm:block"><p className="text-xs font-medium uppercase tracking-wide text-slate-400">At risk</p><p className="mt-1 font-semibold text-slate-800">{formatCurrency(item.amountPaise)}</p></div>
-                      <div className="hidden sm:block"><p className="text-xs font-medium uppercase tracking-wide text-slate-400">Diagnosis</p><p className="mt-1 text-sm font-medium text-slate-700">{item.failureType.replaceAll("_", " ")}</p></div>
+                <CardContent className="space-y-3">
+                  <div className="grid gap-2 rounded-2xl border border-slate-100 bg-slate-50/70 p-3 sm:grid-cols-2 lg:grid-cols-[1.5fr_1fr_.9fr_.75fr_.75fr_auto] dark:border-white/10 dark:bg-white/[0.03]">
+                    <label className="relative"><Search className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-slate-400" /><span className="sr-only">Search by case ID or customer email</span><input value={searchTerm} onChange={event => setSearchTerm(event.target.value)} placeholder="Case ID or customer email" className="h-9 w-full rounded-xl border border-slate-200 bg-white pl-9 pr-3 text-xs font-medium text-slate-700 outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 dark:border-white/10 dark:bg-slate-900 dark:text-slate-100" /></label>
+                    <label><span className="sr-only">Filter recovery cases by decision class</span><select value={decisionFilter} onChange={event => setDecisionFilter(event.target.value as DecisionFilter)} className="h-9 w-full rounded-xl border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 dark:border-white/10 dark:bg-slate-900 dark:text-slate-100"><option value="ALL">All classes</option>{decisionFilters.slice(1).map(filter => <option key={filter.value} value={filter.value}>{filter.label}</option>)}</select></label>
+                    <label><span className="sr-only">Filter by synthetic activity date</span><input value={activityDate} onChange={event => setActivityDate(event.target.value)} type="date" max="2026-08-22" className="h-9 w-full rounded-xl border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 dark:border-white/10 dark:bg-slate-900 dark:text-slate-100" /></label>
+                    <label><span className="sr-only">Minimum amount in INR</span><input value={minAmountInr} onChange={event => setMinAmountInr(event.target.value)} inputMode="numeric" placeholder="Min ₹" className="h-9 w-full rounded-xl border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 dark:border-white/10 dark:bg-slate-900 dark:text-slate-100" /></label>
+                    <label><span className="sr-only">Maximum amount in INR</span><input value={maxAmountInr} onChange={event => setMaxAmountInr(event.target.value)} inputMode="numeric" placeholder="Max ₹" className="h-9 w-full rounded-xl border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 dark:border-white/10 dark:bg-slate-900 dark:text-slate-100" /></label>
+                    <Button variant="outline" size="sm" onClick={clearFilters} disabled={!filtersActive} className="gap-1.5"><X className="h-3.5 w-3.5" />Clear</Button>
+                  </div>
+                  {pendingFilteredCases.length > 0 && <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-3 dark:border-amber-300/20 dark:bg-amber-300/10"><div><p className="text-xs font-bold uppercase tracking-[0.12em] text-amber-700 dark:text-amber-200">Bulk review guardrail</p><p className="mt-1 text-xs text-amber-900 dark:text-amber-50">Only {pendingFilteredCases.length} pending-review case{pendingFilteredCases.length === 1 ? "" : "s"} can be selected. {bulkSelection.length} selected.</p></div><div className="flex gap-2"><Button size="sm" onClick={() => applyBulkDecision("APPROVE")} disabled={!bulkSelection.length || approval.isPending} className="bg-emerald-600 text-white hover:bg-emerald-700">Approve selected</Button><Button size="sm" variant="outline" onClick={() => applyBulkDecision("REJECT")} disabled={!bulkSelection.length || approval.isPending}>Reject selected</Button></div></div>}
+                  {filteredCases.length ? filteredCases.map(item => <div key={item.id} className={`group flex gap-2 rounded-2xl border p-2 transition-all hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md ${selectedCaseId === item.id ? "border-sky-300 bg-sky-50/50 shadow-sm" : "border-slate-100 bg-white dark:border-white/10 dark:bg-slate-950"}`}>
+                    <label className="flex w-7 shrink-0 items-center justify-center" title={isBulkReviewEligible(item.state) ? "Select pending review case for bulk decision" : "Only pending review cases can be bulk reviewed"}><input type="checkbox" checked={bulkSelection.includes(item.id)} onChange={() => toggleBulkCase(item.id)} disabled={!isBulkReviewEligible(item.state)} className="h-4 w-4 rounded border-slate-300 text-cyan-600 focus:ring-cyan-500 disabled:cursor-not-allowed disabled:opacity-30" /></label>
+                    <button onClick={() => setSelectedCaseId(item.id)} className="grid min-w-0 flex-1 grid-cols-[1fr_auto] gap-4 rounded-xl p-2 text-left sm:grid-cols-[1.05fr_.75fr_.85fr_auto]">
+                      <div className="min-w-0"><p className="font-semibold text-slate-900 dark:text-slate-100">{item.id}</p><p className="mt-1 truncate text-sm text-slate-500">{item.customer}</p><p className="mt-1 text-[10px] font-semibold uppercase tracking-wide text-slate-400">{getSyntheticActivityDate(item.id)} · {getDecisionClass(item.state, item.id)}</p></div>
+                      <div className="hidden sm:block"><p className="text-xs font-medium uppercase tracking-wide text-slate-400">At risk</p><p className="mt-1 font-semibold text-slate-800 dark:text-slate-200">{formatCurrency(item.amountPaise)}</p></div>
+                      <div className="hidden sm:block"><p className="text-xs font-medium uppercase tracking-wide text-slate-400">Diagnosis</p><p className="mt-1 text-sm font-medium text-slate-700 dark:text-slate-300">{item.failureType.replaceAll("_", " ")}</p></div>
                       <div className="flex items-center gap-3"><Badge variant="outline" className={stateStyle[item.state]}>{item.state.replaceAll("_", " ")}</Badge><ArrowUpRight className="h-4 w-4 text-slate-400 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" /></div>
                     </button>
-                  )) : <div className="rounded-2xl border border-dashed border-slate-200 p-8 text-center text-sm text-slate-500">No recovery cases match this decision class. Choose another filter to inspect the full queue.</div>}
+                  </div>) : <div className="rounded-2xl border border-dashed border-slate-200 p-8 text-center text-sm text-slate-500">No recovery cases match the current search and filter combination. Clear a filter to inspect the full queue.</div>}
                 </CardContent>
               </Card>
 

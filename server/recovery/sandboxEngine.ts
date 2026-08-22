@@ -123,6 +123,14 @@ function resetIfNeeded() {
       risk: "Exempted by policy",
       candidate: candidate("contact_1182", "pay_rcv_1045", 27_000, "INSUFFICIENT_CONTEXT", true, 5_000, true),
     }),
+    seedCase({
+      id: "RCV-1046",
+      state: "APPROVAL_PENDING",
+      actionType: "REMINDER",
+      reason: "A higher-value payment interruption needs merchant approval before a bounded reminder can be sent.",
+      risk: "Merchant review",
+      candidate: candidate("buyer2@merchant.test", "pay_rcv_1046", 88_000, "TEMPORARY_DECLINE", true, 8_400),
+    }),
   ];
   entries.forEach(entry => {
     store.set(entry.id, entry);

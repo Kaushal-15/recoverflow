@@ -54,3 +54,8 @@
 - [x] Add a recovery-queue filter that groups and views cases by decision class, including approved, rejected, exempted, escalated, pending, and stopped.
 - [x] Add a selected-case CSV export that includes explicitly synthetic/Test Mode payment context, diagnosis, policy reading, and classified review history.
 - [x] Add automated tests for decision-class mapping and CSV evidence formatting, then validate the controls on desktop and mobile.
+- [x] Add a case search control that matches recovery case ID and customer email/identifier.
+- [x] Add date and amount-range controls that narrow the recovery queue while preserving selected-case behavior.
+- [x] Add multi-select support and guarded bulk approval/rejection only for pending-review cases.
+- [x] Add tests for combined filters, bulk-decision eligibility, and selected-case behavior after filtered queue changes.
+- [x] Create, validate, and deliver a reusable architecture-first buildathon product-development skill based on this project workflow.
