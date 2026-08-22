@@ -47,3 +47,7 @@
 - [x] Add an “Explore the dashboard” entry path with an intuitive transition into the sandbox workspace.
 - [x] Add restrained interactive 3D depth, policy-gate motion, and recovery-flow micro-interactions without reducing accessibility or mobile usability.
 - [x] Validate the public home page and dashboard journey across desktop and mobile, then checkpoint the enhanced demo.
+- [x] Add explicitly synthetic/Test Mode payment, device, IP, and failure-context fields to selected recovery cases.
+- [x] Add a detailed selected-case evidence view with payment mode, masked IP, failure problem, diagnostic reasoning, policy checks, and bounded recovery context.
+- [x] Add a tabbed review-history view that classifies decisions as approved, rejected, exempted, escalated, stopped, or pending.
+- [x] Validate selected-case detail and review-history interactions on desktop and mobile, then checkpoint the enhanced investigation flow.
