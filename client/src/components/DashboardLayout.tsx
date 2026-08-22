@@ -29,7 +29,7 @@ import { Button } from "./ui/button";
 import { useTheme } from "@/contexts/ThemeContext";
 
 const menuItems = [
-  { icon: LayoutDashboard, label: "Recovery overview", path: "/" },
+  { icon: LayoutDashboard, label: "Recovery overview", path: "/dashboard" },
   { icon: ClipboardCheck, label: "Review queue", path: "/review-queue" },
   { icon: Settings2, label: "Recovery policy", path: "/policy" },
   { icon: BarChart3, label: "Evaluation", path: "/evaluation" },

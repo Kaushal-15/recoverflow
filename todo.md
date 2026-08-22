@@ -41,3 +41,9 @@
 - [x] Replace hardcoded queue summaries with case and evaluator data, including an explicit baseline-comparison panel.
 - [x] Add visible integrated demo playback for duplicate events, invalid signatures, expired links, conflicting outcomes, and missing-consent stops.
 - [x] Implement sandbox Payment Link callback/outcome handling and cover valid, duplicate, conflicting, and terminal-state callbacks with Vitest.
+- [x] Create and deliver a copy-ready comprehensive Stitch AI UI/UX design brief for RecoverFlow.
+- [x] Audit and remove any in-app floating Manus AI or assistant-style UI element that distracts from the RecoverFlow demo.
+- [x] Build a public RecoverFlow home page that explains the product features and clearly leads visitors into the dashboard.
+- [x] Add an “Explore the dashboard” entry path with an intuitive transition into the sandbox workspace.
+- [x] Add restrained interactive 3D depth, policy-gate motion, and recovery-flow micro-interactions without reducing accessibility or mobile usability.
+- [x] Validate the public home page and dashboard journey across desktop and mobile, then checkpoint the enhanced demo.

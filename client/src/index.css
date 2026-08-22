@@ -296,3 +296,27 @@
 .rf-ledger-panel table tbody tr:last-child { box-shadow: inset 3px 0 0 oklch(0.62 0.12 165); }
 .dark table tbody tr:last-child { box-shadow: inset 3px 0 0 oklch(0.78 0.13 165); }
 @media (max-width: 640px) { .rf-command-surface::before { right: 1rem; bottom: 0.8rem; font-size: 0.45rem; letter-spacing: 0.1em; } .rf-command-surface::after { width: 50%; } }
+
+/* Public story surface: intentional depth with accessible, transform-only motion. */
+.rf-public { background-image: radial-gradient(circle at 90% 0%, oklch(0.85 0.08 192 / 35%), transparent 28%), radial-gradient(circle at 5% 38%, oklch(0.9 0.05 202 / 38%), transparent 32%); }
+.dark .rf-public { background-image: radial-gradient(circle at 90% 0%, oklch(0.38 0.1 198 / 28%), transparent 28%), radial-gradient(circle at 5% 38%, oklch(0.25 0.06 219 / 34%), transparent 32%); }
+.rf-logo-mark { background: linear-gradient(145deg, oklch(0.47 0.13 205), oklch(0.56 0.14 170)); }
+.rf-public-glow { background: oklch(0.72 0.12 188 / 26%); }
+.rf-3d-stage { transform: rotateY(-6deg) rotateX(4deg); transform-style: preserve-3d; transition: transform 500ms cubic-bezier(.23,1,.32,1), box-shadow 500ms cubic-bezier(.23,1,.32,1); }
+.rf-3d-stage:hover { transform: rotateY(0deg) rotateX(0deg) translateY(-8px); box-shadow: 0 46px 100px -30px rgba(8,33,51,.7); }
+.rf-flow-layer { transform: translateZ(24px); transition: transform 300ms cubic-bezier(.23,1,.32,1), background-color 300ms ease; }
+.rf-3d-stage:hover .rf-flow-layer:nth-child(1) { transform: translateZ(52px) translateX(8px); }
+.rf-3d-stage:hover .rf-flow-layer:nth-child(2) { transform: translateZ(42px) translateX(4px); }
+.rf-3d-stage:hover .rf-flow-layer:nth-child(3) { transform: translateZ(32px); }
+.rf-orbit { position: absolute; border: 1px solid oklch(0.7 0.11 192 / 42%); border-radius: 999px; pointer-events: none; }
+.rf-orbit-a { inset: 10% -8% -7% 5%; transform: rotate(-18deg); }
+.rf-orbit-b { inset: 24% 6% -13% -10%; border-color: oklch(0.66 0.12 167 / 34%); transform: rotate(19deg); }
+.rf-floating-proof { animation: rf-float 5s ease-in-out infinite; }
+.rf-step-card { transition: transform 300ms cubic-bezier(.23,1,.32,1), box-shadow 300ms ease; }
+.rf-step-card:hover { transform: translateY(-8px) rotateX(2deg); box-shadow: 0 24px 48px oklch(0.18 0.03 225 / 12%); }
+.rf-tilt-card { transform: perspective(900px) rotateX(0deg) rotateY(0deg); transition: transform 350ms cubic-bezier(.23,1,.32,1), border-color 350ms ease, background-color 350ms ease; }
+.rf-tilt-card:hover { transform: perspective(900px) rotateX(4deg) rotateY(-3deg) translateY(-7px); border-color: rgb(103 232 249 / 42%); background-color: rgb(255 255 255 / 9%); }
+.rf-cta-surface::after { content: "VERIFY · ACT · RECORD"; position: absolute; right: 2rem; bottom: 1.25rem; font-family: "Space Grotesk", sans-serif; font-size: .6rem; font-weight: 700; letter-spacing: .16em; color: oklch(0.55 0.12 196 / 35%); }
+@keyframes rf-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+@media (prefers-reduced-motion: reduce) { .rf-3d-stage, .rf-flow-layer, .rf-step-card, .rf-tilt-card, .rf-floating-proof { animation: none !important; transition: none !important; transform: none !important; } }
+@media (max-width: 640px) { .rf-3d-stage { transform: none; } .rf-floating-proof { position: relative; left: auto; bottom: auto; margin: 1rem 0 0 1rem; width: max-content; } .rf-cta-surface::after { right: 1rem; bottom: .85rem; font-size: .48rem; } }
