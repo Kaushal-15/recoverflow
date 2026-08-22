@@ -387,8 +387,16 @@ async function executeAction(item: SandboxCase, actionType: RecoveryActionType, 
   }
   item.state = "ACTION_ATTEMPTED";
   if (actionType === "PAYMENT_LINK_FALLBACK") {
-    item.paymentLink = await adapter.create(command, 30);
-    providerReferenceIndex.set(item.paymentLink.providerReference, item.id);
+    try {
+      item.paymentLink = await adapter.create(command, 30);
+      providerReferenceIndex.set(item.paymentLink.providerReference, item.id);
+    } catch (error) {
+      item.state = "APPROVAL_PENDING";
+      item.reason = "The Test Mode provider did not accept the action. No recovery action was dispatched; merchant review remains required.";
+      item.risk = "Merchant review";
+      addAudit(item, "SYSTEM", "Action dispatch held", "The external Test Mode request failed before dispatch. The approved case remains retryable and no payment outcome was recorded.");
+      throw error;
+    }
   }
   const actionLabel = actionType === "REMINDER" ? "Sandbox reminder dispatched" : actionType === "SIMULATED_RETRY" ? "Simulated retry dispatched" : "Sandbox Payment Link created";
   addAudit(item, "SYSTEM", actionLabel, "Action is in Test Mode simulation; no real customer contact or money movement occurs.");

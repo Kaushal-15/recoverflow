@@ -23,6 +23,18 @@ describe("executable sandbox recovery flow", () => {
     expect(approved.state).toBe("AWAITING_OUTCOME");
   });
 
+  it("applies independent approve and reject decisions across pending cases, as used by bulk review", async () => {
+    resetSandboxStore();
+    const [approved, rejected] = await Promise.all([
+      decideSandboxApproval("RCV-1041", "APPROVE"),
+      decideSandboxApproval("RCV-1046", "REJECT"),
+    ]);
+
+    expect(approved).toMatchObject({ id: "RCV-1041", state: "AWAITING_OUTCOME" });
+    expect(rejected).toMatchObject({ id: "RCV-1046", state: "STOPPED" });
+    expect(applySandboxOutcome("RCV-1041", "EXPIRED")).toMatchObject({ state: "STOPPED", idempotent: false });
+  });
+
   it("stops a missing-consent case without dispatching customer contact", async () => {
     resetSandboxStore();
     const result = await triggerSandboxFailure("MISSING_CONSENT");

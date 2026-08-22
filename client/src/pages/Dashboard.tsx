@@ -9,6 +9,7 @@ import { buildEvidenceCsv, getDecisionClass, getSyntheticEvidence, reviewStyle, 
 import { filterRecoveryCases, getBulkEligibleIds, getSyntheticActivityDate, isBulkReviewEligible, resolveSelectedCaseId } from "@/lib/caseOperations";
 import { AlertCircle, ArrowUpRight, BadgeCheck, CheckCircle2, CircleDollarSign, Clock3, CreditCard, Download, FileCheck2, Laptop, LockKeyhole, MapPin, RefreshCcw, ScanEye, Search, ShieldAlert, ShieldCheck, Sparkles, TrendingUp, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
 
 function formatCurrency(paise: number) {
   return new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(paise / 100);
@@ -32,13 +33,21 @@ const decisionFilters: { value: DecisionFilter; label: string }[] = [
   { value: "STOPPED", label: "Stopped safely" },
 ];
 
+function actionErrorDescription(error: unknown) {
+  const message = error instanceof Error ? error.message : "";
+  if (message.includes("not awaiting merchant approval")) return "This case was already updated. Refresh the queue and choose its currently available action.";
+  if (message.includes("invalid for the current recovery state")) return "This simulated outcome is no longer available because the recovery state changed.";
+  if (message.includes("Sandbox recovery case not found")) return "This sandbox case is no longer available. Refresh the queue and try again.";
+  return "The action was not completed. No outcome was recorded; refresh the queue and retry if the case is still eligible.";
+}
+
 
 export default function Home() {
   const overview = trpc.recovery.overview.useQuery();
   const utils = trpc.useUtils();
-  const manualPreview = trpc.recovery.previewManualRecovery.useMutation();
-  const approval = trpc.recovery.decideApproval.useMutation();
-  const outcome = trpc.recovery.applyOutcome.useMutation();
+  const manualPreview = trpc.recovery.previewManualRecovery.useMutation({ onError: error => toast.error("Recovery plan was not prepared", { description: actionErrorDescription(error) }) });
+  const approval = trpc.recovery.decideApproval.useMutation({ onError: error => toast.error("Merchant decision was not applied", { description: actionErrorDescription(error) }) });
+  const outcome = trpc.recovery.applyOutcome.useMutation({ onError: error => toast.error("Sandbox outcome was not applied", { description: actionErrorDescription(error) }) });
   const [selectedCaseId, setSelectedCaseId] = useState<string | null>(null);
   const [decisionFilter, setDecisionFilter] = useState<DecisionFilter>(() => {
     const requested = new URLSearchParams(window.location.search).get("decision") as DecisionFilter | null;
@@ -67,9 +76,13 @@ export default function Home() {
   const applyBulkDecision = async (decision: "APPROVE" | "REJECT") => {
     const eligibleIds = getBulkEligibleIds(pendingFilteredCases, bulkSelection);
     if (!eligibleIds.length) return;
-    await Promise.all(eligibleIds.map(caseId => approval.mutateAsync({ caseId, decision })));
+    const results = await Promise.allSettled(eligibleIds.map(caseId => approval.mutateAsync({ caseId, decision })));
+    const completed = results.filter(result => result.status === "fulfilled").length;
+    const failed = results.length - completed;
     setBulkSelection([]);
     await utils.recovery.overview.invalidate();
+    if (completed) toast.success(`${decision === "APPROVE" ? "Approved" : "Rejected"} ${completed} pending case${completed === 1 ? "" : "s"}.`);
+    if (failed) toast.error(`${failed} case action${failed === 1 ? "" : "s"} could not be applied.`, { description: "The completed decisions were preserved. Review the refreshed queue before retrying the remaining cases." });
   };
 
   const clearFilters = () => { setSearchTerm(""); setDecisionFilter("ALL"); setActivityDate(""); setMinAmountInr(""); setMaxAmountInr(""); };

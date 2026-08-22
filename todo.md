@@ -59,3 +59,8 @@
 - [x] Add multi-select support and guarded bulk approval/rejection only for pending-review cases.
 - [x] Add tests for combined filters, bulk-decision eligibility, and selected-case behavior after filtered queue changes.
 - [x] Create, validate, and deliver a reusable architecture-first buildathon product-development skill based on this project workflow.
+- [x] Reproduce and trace non-working individual recovery actions, including manual recovery, approve/reject, and outcome simulation.
+- [x] Repair individual and bulk pending-case recovery mutations without requiring a Supabase migration.
+- [x] Add regression tests and browser verification for approved, rejected, recovered, expired, and bulk-decision action paths.
+- [x] Perform real browser interaction verification after the repair for manual recovery, approval, rejection, simulated recovery, simulated expiry, and guarded bulk approval.
+- [x] Capture and document post-repair browser evidence showing that case state updates and success feedback are rendered in the dashboard.

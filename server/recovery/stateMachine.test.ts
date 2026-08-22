@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createConfiguredPaymentLinkAdapter, SandboxPaymentLinkAdapter } from "./paymentLinkAdapter";
+import { createConfiguredPaymentLinkAdapter, ResilientTestModePaymentLinkAdapter, SandboxPaymentLinkAdapter, type PaymentLinkAdapter } from "./paymentLinkAdapter";
 import { buildIdempotencyKey } from "./orchestrator";
 import { assertTransition, canApplyVerifiedOutcome, canTransition, isTerminalState } from "./stateMachine";
 
@@ -43,5 +43,21 @@ describe("idempotent sandbox payment links", () => {
   it("uses a visibly labeled simulation adapter until Test Mode credentials are supplied", () => {
     const adapter = createConfiguredPaymentLinkAdapter();
     expect(adapter).toBeInstanceOf(SandboxPaymentLinkAdapter);
+  });
+
+  it("continues with a clearly labeled sandbox link when a Test Mode provider request is rejected", async () => {
+    const rejectedProvider: PaymentLinkAdapter = { create: async () => { throw new Error("Razorpay Test Mode request failed"); } };
+    const adapter = new ResilientTestModePaymentLinkAdapter(rejectedProvider);
+    const link = await adapter.create({
+      actionType: "PAYMENT_LINK_FALLBACK",
+      amountPaise: 132_500,
+      customerIdentity: "buyer@merchant.test",
+      externalPaymentId: "pay_rcv_1041",
+      idempotencyKey: "recoverflow_RCV-1041_PAYMENT_LINK_FALLBACK_0",
+    }, 30);
+
+    expect(link.provider).toBe("RAZORPAY_TEST_MODE_SIMULATION");
+    expect(link.amountPaise).toBe(132_500);
+    expect(link.sandboxNotice).toContain("not accepted");
   });
 });
