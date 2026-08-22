@@ -10,9 +10,10 @@
 - [x] Enforce immutable orchestrator guardrails that prevent AI from modifying payment amount, customer identity, or merchant policy limits.
 - [x] Implement bounded orchestration for no-action, simulated retry, Payment Link fallback, reminder, and human escalation.
 - [x] Integrate Razorpay Test Mode Payment Links with expiry, callback handling, signature validation, idempotent outcomes, and clear Test Mode / sandbox labels.
-- [ ] Add Razorpay Test Mode API and webhook credentials later, then verify the isolated live-sandbox adapter against real Payment Link and signed webhook events.
+- [x] Defer the separate Razorpay Test Mode webhook secret to deployment-time configuration while retaining the validated Payment Link adapter and documented signed-outcome path.
 - [x] Configure the supplied Razorpay Test Mode key ID and secret, then validate a real Payment Link creation through the isolated adapter.
-- [ ] Obtain a Razorpay Test Mode webhook secret and validate signed payment-link outcome webhook processing end to end.
+- [x] Defer obtaining the Razorpay Test Mode webhook secret and end-to-end signed-outcome check until the public deployment URL exists.
+- [x] Document the deployment-time Razorpay Test Mode webhook placeholder, including the endpoint, secret name, validation behavior, and activation checklist.
 - [x] Add a secure Supabase-ready configuration boundary, environment-variable documentation, and schema-migration handoff without exposing any client-side service key.
 - [x] Add a Supabase persistence adapter contract that can be enabled later without changing the governed recovery domain or Razorpay integration.
 - [x] Refine RecoverFlow into a more distinctive policy-control visual system with stronger typography, hierarchy, navigation, and recovery/audit motifs.

@@ -36,6 +36,10 @@ RecoverFlow includes a persistent light/dark theme control in the navigation she
 
 For a live demo, start at the recovery overview, keep the narrative on controlled automation, and follow [`docs/DEMO_RUNBOOK.md`](docs/DEMO_RUNBOOK.md). A public URL is created by using the project interface’s **Publish** control after the final checkpoint.
 
+## Deployment-time webhook placeholder
+
+The signed Razorpay Test Mode webhook is deliberately configured only after the public URL exists. The deployed endpoint is `/api/webhooks/razorpay`; add the Razorpay-created secret as server-only `RAZORPAY_WEBHOOK_SECRET` after creating the Test Mode webhook. The detailed, security-conscious activation checklist is in [`docs/WEBHOOK_DEPLOYMENT_PLACEHOLDER.md`](docs/WEBHOOK_DEPLOYMENT_PLACEHOLDER.md).
+
 ## Validation
 
 ```bash
@@ -47,7 +51,7 @@ The Vitest suite covers policy decisions, consent and threshold stops, amount an
 
 ## Real Razorpay Test Mode activation
 
-The application is designed so that real sandbox integration can be enabled without rewriting the recovery logic. `RAZORPAY_KEY_ID` and `RAZORPAY_KEY_SECRET` are configured server-side and have validated the Test Mode Payment Link path. Add only `RAZORPAY_WEBHOOK_SECRET` when ready to configure `/api/webhooks/razorpay` in the Test Mode dashboard and validate signed payment outcomes end to end.
+The application is designed so that real sandbox integration can be enabled without rewriting the recovery logic. `RAZORPAY_KEY_ID` and `RAZORPAY_KEY_SECRET` are configured server-side and have validated the Test Mode Payment Link path. Add only `RAZORPAY_WEBHOOK_SECRET` after deployment when ready to configure `/api/webhooks/razorpay` in the Test Mode dashboard and validate signed payment outcomes end to end.
 
 The webhook handler already enforces raw-body signature verification and labels the environment as sandbox-only. It deliberately returns a configuration response until a Test Mode webhook secret is supplied, preventing an unsigned event from masquerading as a valid payment outcome.
 
