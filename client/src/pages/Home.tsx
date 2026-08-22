@@ -33,7 +33,7 @@ export default function Home() {
   return (
     <DashboardLayout allowDemo>
       <div className="mx-auto max-w-[1500px] space-y-6 pb-10">
-        <section className="relative overflow-hidden rounded-3xl border bg-slate-950 px-6 py-7 text-white shadow-2xl sm:px-8">
+        <section className="rf-command-surface relative overflow-hidden rounded-3xl border bg-slate-950 px-6 py-7 text-white shadow-2xl sm:px-8">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_82%_0%,rgba(59,130,246,.35),transparent_36%),radial-gradient(circle_at_58%_100%,rgba(16,185,129,.18),transparent_34%)]" />
           <div className="relative flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-2xl">
@@ -92,9 +92,14 @@ export default function Home() {
             </section>
 
             <section className="grid gap-6 xl:grid-cols-[1.1fr_.9fr]">
-              <Card className="border-slate-200/80 shadow-sm">
+              <Card className="rf-ledger-panel border-slate-200/80 shadow-sm">
                 <CardHeader><p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Immutable audit trail</p><CardTitle className="mt-1 text-xl">One recovery case, fully explainable</CardTitle></CardHeader>
                 <CardContent className="space-y-5">{data.audit.map((entry, index) => <div className="relative flex gap-4" key={`${entry.time}-${entry.event}`}><div className="relative z-10 mt-1 h-8 w-8 shrink-0 rounded-full border border-sky-200 bg-sky-50 p-2 text-sky-700"><Clock3 className="h-4 w-4" /></div>{index < data.audit.length - 1 && <div className="absolute left-4 top-8 h-[calc(100%+4px)] border-l border-dashed border-slate-200" />}<div className="pb-1"><div className="flex flex-wrap items-center gap-x-2 gap-y-1"><p className="font-medium text-slate-800">{entry.event}</p><span className="text-xs text-slate-400">{entry.time} · {entry.actor}</span></div><p className="mt-1 text-sm leading-5 text-slate-500">{entry.detail}</p></div></div>)}</CardContent>
+              </Card>
+
+              <Card className="rf-ledger-panel border-slate-200/80 shadow-sm">
+                <CardHeader><p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Event receipt ledger</p><CardTitle className="mt-1 text-xl">Verified, duplicate, and rejected events</CardTitle></CardHeader>
+                <CardContent className="space-y-3">{data.receipts.length ? data.receipts.map((receipt, index) => <div key={`${receipt.sourceEventId}-${index}`} className="rounded-2xl border border-slate-100 bg-slate-50 p-3"><div className="flex items-center justify-between gap-3"><p className="text-sm font-semibold text-slate-800">{receipt.eventType}</p><Badge variant="outline" className={receipt.status === "REJECTED" ? "border-rose-200 bg-rose-50 text-rose-700" : receipt.status === "DUPLICATE" ? "border-amber-200 bg-amber-50 text-amber-700" : "border-sky-200 bg-sky-50 text-sky-700"}>{receipt.status}</Badge></div><p className="mt-1 text-xs leading-5 text-slate-500">{receipt.detail}</p></div>) : <p className="text-sm text-slate-500">No event receipts have been added in this sandbox session.</p>}</CardContent>
               </Card>
 
               <Card className="border-slate-200/80 shadow-sm">

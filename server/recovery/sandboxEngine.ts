@@ -1,11 +1,12 @@
 import type { RecoveryActionType, RecoveryCandidate, RecoveryCaseState } from "../../shared/recovery";
-import { deterministicDiagnosis } from "./diagnosis";
+import { deterministicDiagnosis, diagnoseWithGroundedAI, type GroundedDiagnosis } from "./diagnosis";
 import { planRecovery } from "./orchestrator";
-import { SandboxPaymentLinkAdapter, type SandboxPaymentLink } from "./paymentLinkAdapter";
+import { createConfiguredPaymentLinkAdapter, type SandboxPaymentLink } from "./paymentLinkAdapter";
 import { demoPolicy as defaultDemoPolicy } from "./simulator";
 import { canApplyVerifiedOutcome, isTerminalState } from "./stateMachine";
 
 type SandboxAuditEntry = { time: string; actor: "RAZORPAY" | "SYSTEM" | "AI" | "MERCHANT"; event: string; detail: string };
+type SandboxReceipt = { sourceEventId: string; eventType: string; status: "PROCESSED" | "DUPLICATE" | "REJECTED" | "EXCEPTION"; detail: string; time: string };
 type SandboxCase = {
   id: string;
   candidate: RecoveryCandidate;
@@ -16,17 +17,22 @@ type SandboxCase = {
   updatedAt: string;
   audit: SandboxAuditEntry[];
   paymentLink: SandboxPaymentLink | null;
+  diagnosis: GroundedDiagnosis | null;
 };
 
 const store = new Map<string, SandboxCase>();
 const sourceEventIndex = new Map<string, string>();
-const adapter = new SandboxPaymentLinkAdapter();
+const providerReferenceIndex = new Map<string, string>();
+const receipts: SandboxReceipt[] = [];
+const adapter = createConfiguredPaymentLinkAdapter();
 let activePolicy = { ...defaultDemoPolicy, eligibleFailureTypes: [...defaultDemoPolicy.eligibleFailureTypes], permittedActionTypes: [...defaultDemoPolicy.permittedActionTypes] };
 let policyVersion = 1;
 
 export function resetSandboxStore() {
   store.clear();
   sourceEventIndex.clear();
+  providerReferenceIndex.clear();
+  receipts.length = 0;
   activePolicy = { ...defaultDemoPolicy, eligibleFailureTypes: [...defaultDemoPolicy.eligibleFailureTypes], permittedActionTypes: [...defaultDemoPolicy.permittedActionTypes] };
   policyVersion = 1;
 }
@@ -35,8 +41,8 @@ export function getSandboxPolicy() {
   return { ...activePolicy, eligibleFailureTypes: [...activePolicy.eligibleFailureTypes], permittedActionTypes: [...activePolicy.permittedActionTypes], version: policyVersion };
 }
 
-export function updateSandboxPolicy(input: Pick<typeof activePolicy, "autoActionAmountCapPaise" | "maxRetries" | "requiresConsent" | "minimumConfidenceBps" | "reminderMaxContacts">) {
-  activePolicy = { ...activePolicy, ...input };
+export function updateSandboxPolicy(input: Pick<typeof activePolicy, "eligibleFailureTypes" | "permittedActionTypes" | "autoActionAmountCapPaise" | "maxRetries" | "requiresConsent" | "minimumConfidenceBps" | "reminderMaxContacts">) {
+  activePolicy = { ...activePolicy, ...input, eligibleFailureTypes: [...input.eligibleFailureTypes], permittedActionTypes: [...input.permittedActionTypes] };
   policyVersion += 1;
   return getSandboxPolicy();
 }
@@ -45,8 +51,8 @@ function now() {
   return new Date().toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false });
 }
 
-function seedCase(input: Omit<SandboxCase, "audit" | "paymentLink" | "updatedAt"> & { audit?: SandboxAuditEntry[] }): SandboxCase {
-  return { ...input, updatedAt: "just now", audit: input.audit ?? [], paymentLink: null };
+function seedCase(input: Omit<SandboxCase, "audit" | "paymentLink" | "updatedAt" | "diagnosis"> & { audit?: SandboxAuditEntry[] }): SandboxCase {
+  return { ...input, updatedAt: "just now", audit: input.audit ?? [], paymentLink: null, diagnosis: null };
 }
 
 function resetIfNeeded() {
@@ -136,7 +142,23 @@ function displayCase(item: SandboxCase) {
 export function getSandboxSnapshot(selectedCaseId = "RCV-1042") {
   resetIfNeeded();
   const selected = store.get(selectedCaseId) ?? store.get("RCV-1042")!;
-  return { cases: Array.from(store.values()).map(displayCase), audit: selected.audit.slice(-8).reverse() };
+  return { cases: Array.from(store.values()).map(displayCase), audit: selected.audit.slice(-8).reverse(), receipts: receipts.slice(-8).reverse() };
+}
+
+export function getSandboxCaseForPersistence(caseId: string) {
+  resetIfNeeded();
+  const item = requireCase(caseId);
+  return {
+    caseReference: item.id,
+    sourceEventId: `sandbox:${item.id}`,
+    state: item.state,
+    actionType: item.actionType,
+    terminalReason: isTerminalState(item.state) ? item.reason : null,
+    candidate: item.candidate,
+    paymentLink: item.paymentLink,
+    diagnosis: item.diagnosis,
+    audit: [...item.audit],
+  };
 }
 
 export async function runManualRecovery(caseId: string) {
@@ -160,7 +182,10 @@ export async function ingestSandboxEvent(input: {
 }) {
   resetIfNeeded();
   const existingCaseId = sourceEventIndex.get(input.sourceEventId);
-  if (existingCaseId) return { duplicate: true, case: displayCase(requireCase(existingCaseId)) };
+  if (existingCaseId) {
+    receipts.push({ sourceEventId: input.sourceEventId, eventType: "payment.failed", status: "DUPLICATE", detail: "Existing source-event identity prevented a second case and action.", time: now() });
+    return { duplicate: true, case: displayCase(requireCase(existingCaseId)) };
+  }
   const id = `RCV-${String(1100 + store.size + 1)}`;
   const item = seedCase({
     id,
@@ -186,6 +211,7 @@ export async function ingestSandboxEvent(input: {
   sourceEventIndex.set(input.sourceEventId, id);
   addAudit(item, "RAZORPAY", "payment.failed received", `Verified sandbox event ${input.sourceEventId} accepted exactly once.`);
   const result = await processGovernedCase(item, "WEBHOOK");
+  receipts.push({ sourceEventId: input.sourceEventId, eventType: "payment.failed", status: result.plan.outcome === "STOPPED" ? "EXCEPTION" : "PROCESSED", detail: `Recovery ${result.plan.outcome.toLowerCase().replaceAll("_", " ")}.`, time: now() });
   return { duplicate: false, ...result };
 }
 
@@ -206,9 +232,14 @@ export async function ingestSandboxBatch(records: Array<{
 
 async function processGovernedCase(item: SandboxCase, source: "MANUAL" | "WEBHOOK") {
   item.state = "POLICY_EVALUATING";
-  const diagnosis = deterministicDiagnosis(item.candidate, activePolicy.permittedActionTypes);
+  const preflight = planRecovery({ policy: activePolicy, candidate: item.candidate, caseReference: item.id });
+  addAudit(item, "SYSTEM", "Policy evaluation", `Rules: ${preflight.policyRules.join(", ") || "none"} · outcome ${preflight.outcome}${preflight.stoppingReason ? ` · ${preflight.stoppingReason}` : ""}`);
+  const diagnosis = source === "MANUAL" && process.env.NODE_ENV !== "test" && !process.env.VITEST
+    ? await diagnoseWithGroundedAI({ candidate: item.candidate, permittedActions: activePolicy.permittedActionTypes })
+    : deterministicDiagnosis(item.candidate, activePolicy.permittedActionTypes);
+  item.diagnosis = diagnosis;
   const plan = planRecovery({ policy: activePolicy, candidate: item.candidate, diagnosis, caseReference: item.id });
-  addAudit(item, "AI", "Grounded diagnosis", `${diagnosis.failureCause.replaceAll("_", " ")} · ${Math.round(diagnosis.confidenceBps / 100)}% confidence · ${diagnosis.recommendedAction.replaceAll("_", " ")} · source ${source.toLowerCase()}`);
+  addAudit(item, "AI", "Grounded diagnosis", `${diagnosis.failureCause.replaceAll("_", " ")} · ${Math.round(diagnosis.confidenceBps / 100)}% confidence · ${diagnosis.recommendedAction.replaceAll("_", " ")} · ${diagnosis.modelId} · source ${source.toLowerCase()}`);
 
   if (plan.outcome === "STOPPED") {
     item.state = "STOPPED";
@@ -282,10 +313,24 @@ export function applySandboxOutcome(caseId: string, outcome: "RECOVERED" | "EXPI
   return { state: item.state, idempotent: false, conflict: outcome === "CONFLICT" };
 }
 
+export function applyRazorpayPaymentLinkOutcome(providerReference: string, event: "payment_link.paid" | "payment_link.expired" | "payment_link.partially_paid") {
+  const caseId = providerReferenceIndex.get(providerReference);
+  if (!caseId) throw new Error("Unknown Razorpay Test Mode Payment Link reference.");
+  const outcome = event === "payment_link.paid" ? "RECOVERED" : event === "payment_link.expired" ? "EXPIRED" : "CONFLICT";
+  return applySandboxOutcome(caseId, outcome);
+}
+
 export async function triggerSandboxFailure(scenario: "DUPLICATE_EVENT" | "INVALID_SIGNATURE" | "EXPIRED_LINK" | "CONFLICTING_OUTCOME" | "MISSING_CONSENT") {
   resetIfNeeded();
-  if (scenario === "INVALID_SIGNATURE") return { scenario, result: "REJECTED_BEFORE_INGESTION", detail: "Invalid signature rejected before case creation." };
-  if (scenario === "DUPLICATE_EVENT") return { scenario, result: "DUPLICATE_IGNORED", detail: "Existing source-event identity prevented a second case and action." };
+  if (scenario === "INVALID_SIGNATURE") {
+    receipts.push({ sourceEventId: "evt_invalid_signature", eventType: "payment.failed", status: "REJECTED", detail: "Invalid signature rejected before recovery-case creation.", time: now() });
+    return { scenario, result: "REJECTED_BEFORE_INGESTION", detail: "Invalid signature rejected before case creation." };
+  }
+  if (scenario === "DUPLICATE_EVENT") {
+    await ingestSandboxEvent({ sourceEventId: "evt_duplicate_demo", externalPaymentId: "pay_duplicate_demo", amountPaise: 10_000, customerIdentity: "duplicate@merchant.test", failureType: "TEMPORARY_DECLINE", consentGranted: true });
+    await ingestSandboxEvent({ sourceEventId: "evt_duplicate_demo", externalPaymentId: "pay_duplicate_demo", amountPaise: 10_000, customerIdentity: "duplicate@merchant.test", failureType: "TEMPORARY_DECLINE", consentGranted: true });
+    return { scenario, result: "DUPLICATE_IGNORED", detail: "Existing source-event identity prevented a second case and action." };
+  }
   if (scenario === "MISSING_CONSENT") {
     const result = await runManualRecovery("RCV-1040");
     return { scenario, result: result.plan.outcome, detail: "Consent policy stopped recovery before customer contact." };
@@ -317,7 +362,10 @@ async function executeAction(item: SandboxCase, actionType: RecoveryActionType, 
     return;
   }
   item.state = "ACTION_ATTEMPTED";
-  if (actionType === "PAYMENT_LINK_FALLBACK") item.paymentLink = await adapter.create(command, 30);
+  if (actionType === "PAYMENT_LINK_FALLBACK") {
+    item.paymentLink = await adapter.create(command, 30);
+    providerReferenceIndex.set(item.paymentLink.providerReference, item.id);
+  }
   const actionLabel = actionType === "REMINDER" ? "Sandbox reminder dispatched" : actionType === "SIMULATED_RETRY" ? "Simulated retry dispatched" : "Sandbox Payment Link created";
   addAudit(item, "SYSTEM", actionLabel, "Action is in Test Mode simulation; no real customer contact or money movement occurs.");
   item.state = "AWAITING_OUTCOME";

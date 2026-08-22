@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { SandboxPaymentLinkAdapter } from "./paymentLinkAdapter";
+import { createConfiguredPaymentLinkAdapter, SandboxPaymentLinkAdapter } from "./paymentLinkAdapter";
 import { buildIdempotencyKey } from "./orchestrator";
 import { assertTransition, canApplyVerifiedOutcome, canTransition, isTerminalState } from "./stateMachine";
 
@@ -38,5 +38,10 @@ describe("idempotent sandbox payment links", () => {
     expect(link.idempotencyKey).toBe(idempotencyKey);
     expect(link.sandboxNotice).toContain("no real money is moved");
     expect(link.expiresAt.getTime()).toBeGreaterThan(Date.now());
+  });
+
+  it("uses a visibly labeled simulation adapter until Test Mode credentials are supplied", () => {
+    const adapter = createConfiguredPaymentLinkAdapter();
+    expect(adapter).toBeInstanceOf(SandboxPaymentLinkAdapter);
   });
 });

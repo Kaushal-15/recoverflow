@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { applySandboxOutcome, decideSandboxApproval, getSandboxSnapshot, ingestSandboxBatch, ingestSandboxEvent, resetSandboxStore, runManualRecovery, triggerSandboxFailure } from "./sandboxEngine";
+import { applyRazorpayPaymentLinkOutcome, applySandboxOutcome, decideSandboxApproval, getSandboxPolicy, getSandboxSnapshot, ingestSandboxBatch, ingestSandboxEvent, resetSandboxStore, runManualRecovery, triggerSandboxFailure, updateSandboxPolicy } from "./sandboxEngine";
 
 describe("executable sandbox recovery flow", () => {
   it("progresses a low-risk manual recovery through a governed action and exactly one verified outcome", async () => {
@@ -64,5 +64,34 @@ describe("executable sandbox recovery flow", () => {
     expect(plan.case.actionType).toBe("REMINDER");
     expect(plan.case.state).toBe("AWAITING_OUTCOME");
     expect(applySandboxOutcome("RCV-1043", "RECOVERED").state).toBe("RECOVERED");
+  });
+
+  it("versions merchant-owned eligible failures and action permissions", () => {
+    resetSandboxStore();
+    const policy = updateSandboxPolicy({
+      eligibleFailureTypes: ["TEMPORARY_DECLINE"],
+      permittedActionTypes: ["SIMULATED_RETRY", "HUMAN_ESCALATION"],
+      autoActionAmountCapPaise: 40_000,
+      maxRetries: 1,
+      requiresConsent: true,
+      minimumConfidenceBps: 8_500,
+      reminderMaxContacts: 1,
+    });
+    expect(policy.version).toBe(2);
+    expect(getSandboxPolicy().eligibleFailureTypes).toEqual(["TEMPORARY_DECLINE"]);
+    expect(getSandboxPolicy().permittedActionTypes).toEqual(["SIMULATED_RETRY", "HUMAN_ESCALATION"]);
+  });
+
+  it("applies a recognized payment-link outcome only once through the signed callback path", async () => {
+    resetSandboxStore();
+    const planned = await runManualRecovery("RCV-1041");
+    expect(planned.plan.outcome).toBe("APPROVAL_REQUIRED");
+    const approved = await decideSandboxApproval("RCV-1041", "APPROVE");
+    const providerReference = approved.paymentLink?.providerReference;
+    expect(providerReference).toBeTruthy();
+    const first = applyRazorpayPaymentLinkOutcome(providerReference!, "payment_link.paid");
+    const duplicate = applyRazorpayPaymentLinkOutcome(providerReference!, "payment_link.paid");
+    expect(first).toMatchObject({ state: "RECOVERED", idempotent: false });
+    expect(duplicate).toMatchObject({ state: "RECOVERED", idempotent: true });
   });
 });

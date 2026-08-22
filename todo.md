@@ -1,17 +1,32 @@
 # Project TODO
 
 - [x] Write and commit the HLD, LLD, API contracts, data model, recovery state machine, test plan, and phased implementation roadmap.
-- [ ] Add merchant recovery-policy persistence and controls for failure eligibility, amount thresholds, retry limits, consent requirements, escalation rules, and stopping conditions.
-- [ ] Implement webhook ingestion with source-event identity, signature-verification boundary, duplicate-event protection, idempotent processing, and failed-event visibility.
+- [x] Add merchant recovery-policy persistence and controls for failure eligibility, amount thresholds, retry limits, consent requirements, escalation rules, and stopping conditions.
+- [x] Implement webhook ingestion with source-event identity, signature-verification boundary, duplicate-event protection, idempotent processing, and failed-event visibility.
 - [x] Implement batch ingestion for reproducible synthetic payment-event replay.
 - [x] Implement the exact manual entry action wording: “review/recover this payment”.
 - [x] Implement hybrid autonomy: auto-run only low-risk policy-approved actions and require merchant approval for high-value, low-confidence, or ambiguous cases.
-- [ ] Implement grounded AI diagnosis with structured outputs that identify likely failure cause, explain evidence, and select only from the policy-approved action set.
+- [x] Implement grounded AI diagnosis with structured outputs that identify likely failure cause, explain evidence, and select only from the policy-approved action set.
 - [x] Enforce immutable orchestrator guardrails that prevent AI from modifying payment amount, customer identity, or merchant policy limits.
 - [x] Implement bounded orchestration for no-action, simulated retry, Payment Link fallback, reminder, and human escalation.
-- [ ] Integrate Razorpay Test Mode Payment Links with expiry, callback handling, signature validation, idempotent outcomes, and clear Test Mode / sandbox labels.
+- [x] Integrate Razorpay Test Mode Payment Links with expiry, callback handling, signature validation, idempotent outcomes, and clear Test Mode / sandbox labels.
 - [ ] Add Razorpay Test Mode API and webhook credentials later, then verify the isolated live-sandbox adapter against real Payment Link and signed webhook events.
-- [ ] Create an immutable audit trail for events, policy checks, AI rationale, approvals, attempted actions, webhook outcomes, and stopping reasons.
+- [x] Configure the supplied Razorpay Test Mode key ID and secret, then validate a real Payment Link creation through the isolated adapter.
+- [ ] Obtain a Razorpay Test Mode webhook secret and validate signed payment-link outcome webhook processing end to end.
+- [x] Add a secure Supabase-ready configuration boundary, environment-variable documentation, and schema-migration handoff without exposing any client-side service key.
+- [x] Add a Supabase persistence adapter contract that can be enabled later without changing the governed recovery domain or Razorpay integration.
+- [x] Refine RecoverFlow into a more distinctive policy-control visual system with stronger typography, hierarchy, navigation, and recovery/audit motifs.
+- [x] Implement accessible dark and light modes with a persistent theme toggle and ensure all dashboard states maintain readable contrast.
+- [x] Re-verify desktop and mobile live-demo flows, including the real Razorpay Test Mode adapter status and all sandbox labels.
+- [x] Save a polished live-demo checkpoint and provide instructions for creating the public demo URL through the project publish controls.
+- [x] Document the managed-database live-demo decision and a future Supabase Postgres migration handoff using a server-side pooled connection string.
+- [x] Reframe the Supabase adapter contract as a future migration boundary rather than adding a second live database to the buildathon demo.
+- [x] Implement an env-guarded server-side Supabase repository interface that preserves the governed recovery-domain contracts without enabling a second database in the demo.
+- [x] Add a signature RecoverFlow policy-gate / ledger motif across overview, policy, and evaluation command surfaces.
+- [x] Verify dark-mode contrast for overview, policy, evaluation, forms, alerts, badges, tables, and mobile navigation.
+- [x] Strengthen RecoverFlow’s ownable policy-gate and immutable-ledger visual language across all major routes, badges, tables, and evidence panels.
+- [x] Re-run desktop and mobile visual verification to confirm the product reads as a distinct RecoverFlow control plane rather than a generic SaaS dashboard.
+- [x] Create an immutable audit trail for events, policy checks, AI rationale, approvals, attempted actions, webhook outcomes, and stopping reasons.
 - [x] Build an elegant merchant operations dashboard for queue status, recovered revenue, recovery rate, action precision, false-positive cost, exceptions, and deterministic-baseline comparison.
 - [x] Build the merchant approval flow and exception queue, including safe no-action and escalation views.
 - [x] Build a reproducible synthetic 200-record batch simulator, a held-out evaluation set, and deliberate demo failure scenarios.

@@ -1,6 +1,6 @@
 import type { Express, Request, Response } from "express";
 import { digestRawPayload, normalizeFailedPaymentEvent, verifyRazorpayWebhookSignature } from "./ingestion";
-import { ingestSandboxEvent } from "./sandboxEngine";
+import { applyRazorpayPaymentLinkOutcome, ingestSandboxEvent } from "./sandboxEngine";
 
 export function registerRazorpayWebhook(app: Express) {
   app.post("/api/webhooks/razorpay", async (req: Request, res: Response) => {
@@ -16,6 +16,12 @@ export function registerRazorpayWebhook(app: Express) {
     }
     try {
       const payload = JSON.parse(rawBody.toString("utf8"));
+      if (["payment_link.paid", "payment_link.expired", "payment_link.partially_paid"].includes(payload.event)) {
+        const providerReference = payload.payload?.payment_link?.entity?.id;
+        if (typeof providerReference !== "string") return res.status(400).json({ accepted: false, code: "MISSING_PAYMENT_LINK_REFERENCE" });
+        const outcome = applyRazorpayPaymentLinkOutcome(providerReference, payload.event);
+        return res.status(202).json({ accepted: true, sandbox: true, payloadDigest: digestRawPayload(rawBody), outcome });
+      }
       if (payload.event !== "payment.failed") return res.status(202).json({ accepted: true, ignored: true, reason: "UNSUPPORTED_EVENT" });
       const normalized = normalizeFailedPaymentEvent(payload);
       const recovery = await ingestSandboxEvent({

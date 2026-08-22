@@ -175,3 +175,124 @@
     }
   }
 }
+
+/* RecoverFlow visual system: policy-console clarity with calm financial-risk colors. */
+:root {
+  --primary: oklch(0.46 0.11 202);
+  --primary-foreground: oklch(0.99 0.01 194);
+  --sidebar-primary: oklch(0.39 0.1 202);
+  --sidebar-primary-foreground: oklch(0.99 0.01 194);
+  --background: oklch(0.975 0.009 193);
+  --foreground: oklch(0.22 0.025 242);
+  --card: oklch(0.995 0.004 193 / 93%);
+  --card-foreground: oklch(0.22 0.025 242);
+  --popover: oklch(0.995 0.004 193);
+  --popover-foreground: oklch(0.22 0.025 242);
+  --secondary: oklch(0.95 0.013 201);
+  --secondary-foreground: oklch(0.28 0.035 232);
+  --muted: oklch(0.95 0.012 201);
+  --muted-foreground: oklch(0.48 0.034 235);
+  --accent: oklch(0.91 0.034 193);
+  --accent-foreground: oklch(0.25 0.055 214);
+  --border: oklch(0.88 0.018 201);
+  --input: oklch(0.88 0.018 201);
+  --ring: oklch(0.55 0.12 202);
+  --sidebar: oklch(0.97 0.011 204 / 94%);
+  --sidebar-foreground: oklch(0.22 0.025 242);
+  --sidebar-accent: oklch(0.91 0.034 193);
+  --sidebar-accent-foreground: oklch(0.25 0.055 214);
+  --sidebar-border: oklch(0.87 0.018 201);
+  --sidebar-ring: oklch(0.55 0.12 202);
+  --radius: 0.9rem;
+}
+
+.dark {
+  --primary: oklch(0.72 0.12 190);
+  --primary-foreground: oklch(0.16 0.03 237);
+  --sidebar-primary: oklch(0.72 0.12 190);
+  --sidebar-primary-foreground: oklch(0.16 0.03 237);
+  --background: oklch(0.16 0.026 237);
+  --foreground: oklch(0.91 0.012 193);
+  --card: oklch(0.205 0.028 231 / 95%);
+  --card-foreground: oklch(0.91 0.012 193);
+  --popover: oklch(0.205 0.028 231);
+  --popover-foreground: oklch(0.91 0.012 193);
+  --secondary: oklch(0.25 0.032 227);
+  --secondary-foreground: oklch(0.84 0.016 193);
+  --muted: oklch(0.25 0.032 227);
+  --muted-foreground: oklch(0.72 0.018 202);
+  --accent: oklch(0.29 0.054 215);
+  --accent-foreground: oklch(0.92 0.012 193);
+  --border: oklch(0.42 0.036 218 / 55%);
+  --input: oklch(0.42 0.036 218 / 65%);
+  --ring: oklch(0.72 0.12 190);
+  --sidebar: oklch(0.18 0.03 235 / 95%);
+  --sidebar-foreground: oklch(0.9 0.012 193);
+  --sidebar-accent: oklch(0.29 0.054 215);
+  --sidebar-accent-foreground: oklch(0.92 0.012 193);
+  --sidebar-border: oklch(0.42 0.036 218 / 55%);
+  --sidebar-ring: oklch(0.72 0.12 190);
+}
+
+@layer base {
+  body {
+    font-family: "DM Sans", ui-sans-serif, system-ui, sans-serif;
+    background-image: radial-gradient(circle at 80% -20%, oklch(0.82 0.09 190 / 28%), transparent 34%), radial-gradient(circle at 8% 0%, oklch(0.92 0.04 190 / 40%), transparent 28%);
+    min-height: 100vh;
+  }
+  h1, h2, h3, .font-display { font-family: "Space Grotesk", "DM Sans", ui-sans-serif, sans-serif; }
+}
+
+@layer utilities {
+  .dark .bg-white, .dark .bg-slate-50 { background-color: oklch(0.22 0.03 230) !important; }
+  .dark .bg-slate-100 { background-color: oklch(0.27 0.036 224) !important; }
+  .dark .bg-emerald-50, .dark .bg-emerald-50\/60 { background-color: oklch(0.26 0.05 168 / 72%) !important; }
+  .dark .bg-emerald-50\/70 { background-color: oklch(0.31 0.065 164 / 76%) !important; }
+  .dark .bg-sky-50, .dark .bg-sky-50\/50 { background-color: oklch(0.26 0.05 222 / 72%) !important; }
+  .dark .border-slate-100, .dark .border-slate-200, .dark .border-slate-200\/80 { border-color: oklch(0.42 0.036 218 / 55%) !important; }
+  .dark .text-slate-900, .dark .text-slate-800, .dark .text-slate-700 { color: oklch(0.9 0.012 193) !important; }
+  .dark .text-slate-600, .dark .text-slate-500, .dark .text-slate-400 { color: oklch(0.72 0.018 202) !important; }
+  .dark .text-emerald-950, .dark .text-emerald-900, .dark .text-emerald-800 { color: oklch(0.9 0.055 165) !important; }
+  .dark .text-sky-950, .dark .text-sky-900, .dark .text-sky-800 { color: oklch(0.9 0.045 220) !important; }
+  .dark .shadow-sm { box-shadow: 0 18px 45px oklch(0.08 0.018 235 / 28%); }
+  .dark body { background-image: radial-gradient(circle at 84% -16%, oklch(0.4 0.11 206 / 34%), transparent 34%), radial-gradient(circle at 6% 0%, oklch(0.3 0.07 222 / 35%), transparent 28%); }
+}
+
+/* RecoverFlow signature: policy gates feed a tamper-evident ledger trail. */
+.rf-command-surface, section.bg-gradient-to-br.from-slate-950 {
+  isolation: isolate;
+  position: relative;
+  overflow: hidden;
+}
+.rf-command-surface::before, section.bg-gradient-to-br.from-slate-950::before {
+  content: "POLICY GATE  •  VERIFY  •  ACT  •  RECORD";
+  position: absolute;
+  right: 1.5rem;
+  bottom: 1.15rem;
+  color: rgb(165 243 252 / 28%);
+  font-family: "Space Grotesk", ui-sans-serif, sans-serif;
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  white-space: nowrap;
+}
+.rf-command-surface::after, section.bg-gradient-to-br.from-slate-950::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 38%;
+  height: 100%;
+  opacity: 0.48;
+  pointer-events: none;
+  background-image: repeating-linear-gradient(90deg, transparent 0 22px, rgb(103 232 249 / 14%) 22px 23px, transparent 23px 46px), linear-gradient(180deg, transparent 12%, rgb(103 232 249 / 17%) 12% 13%, transparent 13% 86%, rgb(103 232 249 / 11%) 86% 87%, transparent 87%);
+  mask-image: linear-gradient(90deg, transparent, black 25%, black);
+}
+.rf-command-surface > *, section.bg-gradient-to-br.from-slate-950 > * { position: relative; z-index: 1; }
+.rf-ledger-panel { position: relative; overflow: hidden; }
+.rf-ledger-panel::before { content: ""; position: absolute; left: 0; top: 1.25rem; bottom: 1.25rem; width: 3px; border-radius: 0 99px 99px 0; background: linear-gradient(to bottom, rgb(45 212 191), rgb(14 116 144)); opacity: 0.85; }
+.rf-ledger-row { box-shadow: inset 3px 0 0 oklch(0.62 0.12 165); }
+.dark .rf-ledger-row { box-shadow: inset 3px 0 0 oklch(0.78 0.13 165); }
+.rf-ledger-panel table tbody tr:last-child { box-shadow: inset 3px 0 0 oklch(0.62 0.12 165); }
+.dark table tbody tr:last-child { box-shadow: inset 3px 0 0 oklch(0.78 0.13 165); }
+@media (max-width: 640px) { .rf-command-surface::before { right: 1rem; bottom: 0.8rem; font-size: 0.45rem; letter-spacing: 0.1em; } .rf-command-surface::after { width: 50%; } }

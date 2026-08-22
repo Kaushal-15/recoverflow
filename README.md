@@ -2,7 +2,7 @@
 
 **RecoverFlow** is an explainable payment-recovery control plane built for the Razorpay AI Buildathon’s **AI Revenue Recovery** track. It demonstrates how a merchant can recover eligible failed payments without handing an AI agent unrestricted authority over payments.
 
-> **Razorpay Test Mode — Sandbox:** this project currently runs in a credential-free simulation mode. No real money is moved, no real customer is contacted, and no production Razorpay account is required to run the demo.
+> **Razorpay Test Mode — Sandbox:** RecoverFlow uses an authenticated Test Mode Payment Link adapter while keeping recovery outcomes clearly labeled as sandbox evidence. No Live Mode request is made and no real money is moved.
 
 ## What the demo proves
 
@@ -12,7 +12,7 @@
 | Bounded action set | The orchestrator accepts only `NO_ACTION`, `SIMULATED_RETRY`, `PAYMENT_LINK_FALLBACK`, `REMINDER`, and `HUMAN_ESCALATION`. |
 | Immutable payment facts | Tests reject action commands that alter payment amount, customer identity, or payment identity. |
 | Event-security boundary | Razorpay-style webhook HMAC verification uses the exact raw body; malformed or unsigned production events are rejected. |
-| Test Mode adapter | A simulated Payment Link adapter returns a sandbox link, expiry, stable provider reference, and idempotency key. |
+| Test Mode adapter | The adapter has authenticated against Razorpay Test Mode and created a real sandbox Payment Link; simulation remains available for deterministic evaluation runs. |
 | Merchant control | The dashboard displays policy boundaries, the review queue, exceptions, audit evidence, and the exact manual action **“review/recover this payment.”** |
 | Reproducible evaluation | A deterministic synthetic batch contains 200 records with a fixed 160/40 development/held-out split and compares RecoverFlow to three baselines. |
 
@@ -30,6 +30,12 @@ pnpm dev
 
 Open the local preview and use the sidebar to inspect the recovery workspace, review queue, policy view, and evaluator. Select a case from the overview and use **“review/recover this payment”** to view the governed plan. The demo intentionally shows whether the selected case is action-ready, approval-required, or stopped.
 
+## Live-demo presentation controls
+
+RecoverFlow includes a persistent light/dark theme control in the navigation shell. You can also open `?theme=dark` for a direct presentation-ready dark view. Its visual grammar is intentional: command headers expose **policy-gate rails**, while audit and receipt panels use **immutable-ledger markers** to make recovery governance visible before a reviewer reads the detail.
+
+For a live demo, start at the recovery overview, keep the narrative on controlled automation, and follow [`docs/DEMO_RUNBOOK.md`](docs/DEMO_RUNBOOK.md). A public URL is created by using the project interface’s **Publish** control after the final checkpoint.
+
 ## Validation
 
 ```bash
@@ -41,7 +47,7 @@ The Vitest suite covers policy decisions, consent and threshold stops, amount an
 
 ## Real Razorpay Test Mode activation
 
-The application is designed so that real sandbox integration can be enabled without rewriting the recovery logic. When credentials are available, add `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`, and `RAZORPAY_WEBHOOK_SECRET` as server-side secrets. Then complete the isolated adapter by replacing the simulated provider request with the Razorpay Test Mode Payment Links API and configure the `/api/webhooks/razorpay` endpoint in the Test Mode dashboard.
+The application is designed so that real sandbox integration can be enabled without rewriting the recovery logic. `RAZORPAY_KEY_ID` and `RAZORPAY_KEY_SECRET` are configured server-side and have validated the Test Mode Payment Link path. Add only `RAZORPAY_WEBHOOK_SECRET` when ready to configure `/api/webhooks/razorpay` in the Test Mode dashboard and validate signed payment outcomes end to end.
 
 The webhook handler already enforces raw-body signature verification and labels the environment as sandbox-only. It deliberately returns a configuration response until a Test Mode webhook secret is supplied, preventing an unsigned event from masquerading as a valid payment outcome.
 
@@ -59,4 +65,4 @@ The webhook handler already enforces raw-body signature verification and labels 
 
 ## Current scope and deliberate limitations
 
-The live Razorpay Test Mode request and signed webhook receipt persistence are intentionally left pending until credentials are available. This keeps the demo honest: it demonstrates executable sandbox approvals, outcomes, failure scenarios, and testable safety controls without claiming that simulated outcomes are live money recovery.
+The real Razorpay Test Mode adapter, signed raw-body webhook boundary, and durable merchant-policy/audit persistence are implemented behind configuration boundaries. The remaining external activation step is supplying the separate Test Mode webhook secret. Until that point, the application deliberately uses executable sandbox outcomes and never claims that a simulated outcome is live money recovery.
