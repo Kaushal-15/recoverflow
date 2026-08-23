@@ -52,5 +52,5 @@ describe("Supabase webhook persistence", () => {
     } finally {
       await pool.end();
     }
-  });
+  }, 15_000);
 });

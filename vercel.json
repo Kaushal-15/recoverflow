@@ -5,8 +5,9 @@
   "installCommand": "pnpm install --frozen-lockfile",
   "outputDirectory": "dist/public",
   "functions": {
-    "api/index.ts": {
-      "maxDuration": 30
+    "api/index.cjs": {
+      "maxDuration": 30,
+      "includeFiles": "dist/vercel-app.cjs"
     }
   },
   "rewrites": [

@@ -1,8 +1,11 @@
 import { describe, expect, it } from "vitest";
-import handler from "../api/index";
+import { existsSync, readFileSync } from "node:fs";
+import { resolve } from "node:path";
 
 describe("Vercel serverless entrypoint", () => {
-  it("exports an explicit Node-compatible request handler", () => {
-    expect(typeof handler).toBe("function");
+  it("uses a traced CommonJS wrapper around the explicit server bundle", () => {
+    const entry = resolve(process.cwd(), "api/index.cjs");
+    expect(existsSync(entry)).toBe(true);
+    expect(readFileSync(entry, "utf8")).toContain("../dist/vercel-app.cjs");
   });
 });
