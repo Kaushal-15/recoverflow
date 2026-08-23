@@ -76,3 +76,8 @@
 - [x] Add a restart-safe regression proving a newly persisted non-seed case appears in the Supabase-backed overview with its audit and receipt history.
 - [x] Replace in-memory mutation runtime access with Supabase-backed case hydration so manual recovery, approval/rejection, outcomes, and batch/webhook cases remain actionable after restart.
 - [x] Verify real browser actions on a persisted non-seed Supabase case after a server restart and confirm its audit and receipt history remain available.
+- [x] Reproduce and diagnose the Vercel deployment’s 500 responses for `/api/trpc/recovery.*` requests.
+- [ ] Repair the Vercel serverless API entrypoint, routing, and runtime configuration so tRPC returns JSON responses.
+- [ ] Verify the deployed Vercel dashboard loads the Supabase-backed recovery workspace and document the redeployment steps.
+- [ ] Redeploy the corrected build to Vercel and verify `/api/trpc/recovery.overview` returns a valid tRPC JSON response rather than an HTML 500 page.
+- [ ] Open the redeployed Vercel dashboard and capture concrete evidence that the Supabase-backed recovery workspace finishes loading.
