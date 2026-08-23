@@ -1,5 +1,7 @@
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { RequireAdmin } from "@/components/RequireAdmin";
+import AdminLogin from "@/pages/AdminLogin";
 import NotFound from "@/pages/NotFound";
 import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
@@ -15,10 +17,11 @@ function Router() {
   return (
     <Switch>
       <Route path={"/"} component={Home} />
-      <Route path={"/dashboard"} component={Dashboard} />
-      <Route path={"/review-queue"} component={ReviewQueue} />
-      <Route path={"/policy"} component={RecoveryPolicy} />
-      <Route path={"/evaluation"} component={Evaluation} />
+      <Route path={"/admin/login"} component={AdminLogin} />
+      <Route path={"/dashboard"} component={() => <RequireAdmin component={Dashboard} />} />
+      <Route path={"/review-queue"} component={() => <RequireAdmin component={ReviewQueue} />} />
+      <Route path={"/policy"} component={() => <RequireAdmin component={RecoveryPolicy} />} />
+      <Route path={"/evaluation"} component={() => <RequireAdmin component={Evaluation} />} />
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}
       <Route component={NotFound} />

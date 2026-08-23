@@ -89,7 +89,7 @@ export default function Home() {
   const filtersActive = Boolean(searchTerm || decisionFilter !== "ALL" || activityDate || minAmountInr || maxAmountInr);
 
   return (
-    <DashboardLayout allowDemo>
+    <DashboardLayout>
       <div className="mx-auto max-w-[1500px] space-y-6 pb-10">
         <section className="rf-command-surface relative overflow-hidden rounded-3xl border bg-slate-950 px-6 py-7 text-white shadow-2xl sm:px-8">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_82%_0%,rgba(59,130,246,.35),transparent_36%),radial-gradient(circle_at_58%_100%,rgba(16,185,129,.18),transparent_34%)]" />

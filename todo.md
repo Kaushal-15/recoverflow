@@ -66,3 +66,9 @@
 - [x] Capture and document post-repair browser evidence showing that case state updates and success feedback are rendered in the dashboard.
 - [x] Confirm the saved Razorpay Test Mode webhook URL and active-event selection match the deployed RecoverFlow receiver configuration.
 - [x] Verify signed webhook delivery against the deployed RecoverFlow receiver and document the activation result.
+- [x] Assess the current managed-database, in-memory demo, authentication, and Vercel deployment boundaries for Supabase migration.
+- [x] Define and document the Supabase Postgres schema, row-level access model, environment contract, and Vercel deployment configuration.
+- [ ] Replace the demo persistence boundary with Supabase-backed recovery records, policies, audit evidence, and webhook idempotency.
+- [x] Add a Supabase Auth admin sign-in page, protected dashboard routes, and explicit admin authorization checks.
+- [ ] Configure the Supabase service-role key and activate server-only Razorpay webhook receipt and outcome persistence.
+- [ ] Validate the Supabase-backed recovery, signed webhook, and admin sign-in flows, then prepare Vercel deployment instructions.

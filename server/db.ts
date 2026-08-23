@@ -190,7 +190,7 @@ export async function createMerchantPolicyVersion(userId: number, input: {
   return getActivePolicyForMerchant(merchant.id);
 }
 
-type PersistableSandboxCase = {
+export type PersistableSandboxCase = {
   caseReference: string;
   sourceEventId: string;
   state: RecoveryCaseState;

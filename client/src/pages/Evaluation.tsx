@@ -13,7 +13,7 @@ export default function Evaluation() {
   const batch = trpc.recovery.ingestSandboxBatch.useMutation();
 
   return (
-    <DashboardLayout allowDemo>
+    <DashboardLayout>
       <div className="mx-auto max-w-[1300px] space-y-6 pb-10">
         <section className="rf-command-surface relative overflow-hidden rounded-3xl border bg-gradient-to-br from-slate-950 via-slate-950 to-cyan-950 p-7 text-white shadow-2xl">
           <div className="absolute -right-16 -top-20 h-52 w-52 rounded-full bg-cyan-400/15 blur-3xl" />

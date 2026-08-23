@@ -3,7 +3,7 @@ import { createHash } from "node:crypto";
 export type AuditActorType = "SYSTEM" | "MERCHANT" | "RAZORPAY" | "AI";
 
 export type AuditEntryInput = {
-  recoveryCaseId: number;
+  recoveryCaseId: number | string;
   sequence: number;
   actorType: AuditActorType;
   eventType: string;
