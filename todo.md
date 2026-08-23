@@ -68,7 +68,11 @@
 - [x] Verify signed webhook delivery against the deployed RecoverFlow receiver and document the activation result.
 - [x] Assess the current managed-database, in-memory demo, authentication, and Vercel deployment boundaries for Supabase migration.
 - [x] Define and document the Supabase Postgres schema, row-level access model, environment contract, and Vercel deployment configuration.
-- [ ] Replace the demo persistence boundary with Supabase-backed recovery records, policies, audit evidence, and webhook idempotency.
+- [x] Replace the demo persistence boundary with Supabase-backed recovery records, policies, audit evidence, and webhook idempotency.
 - [x] Add a Supabase Auth admin sign-in page, protected dashboard routes, and explicit admin authorization checks.
-- [ ] Configure the Supabase service-role key and activate server-only Razorpay webhook receipt and outcome persistence.
-- [ ] Validate the Supabase-backed recovery, signed webhook, and admin sign-in flows, then prepare Vercel deployment instructions.
+- [x] Configure the Supabase service-role key and activate server-only Razorpay webhook receipt and outcome persistence.
+- [x] Validate the Supabase-backed recovery, signed webhook, and admin sign-in flows, then prepare Vercel deployment instructions.
+- [x] Replace dashboard overview, policy, audit, and receipt reads with a complete Supabase query layer that restores cases without in-memory fixture dependence.
+- [x] Add a restart-safe regression proving a newly persisted non-seed case appears in the Supabase-backed overview with its audit and receipt history.
+- [x] Replace in-memory mutation runtime access with Supabase-backed case hydration so manual recovery, approval/rejection, outcomes, and batch/webhook cases remain actionable after restart.
+- [x] Verify real browser actions on a persisted non-seed Supabase case after a server restart and confirm its audit and receipt history remain available.

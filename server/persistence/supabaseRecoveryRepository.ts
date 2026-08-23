@@ -1,7 +1,9 @@
 import { Pool, type PoolClient } from "pg";
 import { buildAuditEntry, type AuditActorType } from "../recovery/audit";
 import type { PersistableSandboxCase } from "../db";
-import type { RecoveryActionType, RecoveryCandidate } from "../../shared/recovery";
+import type { RecoveryActionType, RecoveryCandidate, RecoveryCaseState } from "../../shared/recovery";
+import { getSandboxCaseForPersistence, getSandboxSnapshot } from "../recovery/sandboxEngine";
+import type { GroundedDiagnosis } from "../recovery/diagnosis";
 
 type SupabaseMerchantUser = { id: string; email: string | null; name: string | null };
 type MerchantRow = { id: string };
@@ -9,7 +11,7 @@ type PolicyRow = { id: string; version: number; permitted_action_types: unknown 
 type IdRow = { id: string };
 type PersistedCaseRow = {
   case_reference: string;
-  state: string;
+  state: RecoveryCaseState;
   terminal_reason: string | null;
   action_type: RecoveryActionType | null;
   provider_reference: string | null;
@@ -87,7 +89,7 @@ async function activePolicy(client: PoolClient, merchantId: string) {
     merchantId,
     "Default guarded recovery policy",
     JSON.stringify(["TEMPORARY_DECLINE", "CUSTOMER_FRICTION"]),
-    JSON.stringify(["SIMULATED_RETRY", "PAYMENT_LINK_FALLBACK", "REMINDER"]),
+    JSON.stringify(["SIMULATED_RETRY", "PAYMENT_LINK_FALLBACK", "REMINDER", "HUMAN_ESCALATION"]),
     JSON.stringify({ highValue: "APPROVAL", ambiguous: "APPROVAL", lowConfidence: "APPROVAL" }),
     JSON.stringify(["CONSENT_REQUIRED", "RETRY_LIMIT_REACHED", "PAYMENT_ALREADY_RESOLVED"]),
   ]);
@@ -217,13 +219,182 @@ export async function getSupabaseActivePolicyForUser(user: SupabaseMerchantUser)
     const merchant = await ensureMerchant(client, user);
     const policy = await client.query<{
       version: number; auto_action_amount_cap_paise: number; max_retries: number; requires_consent: boolean;
-      minimum_confidence_bps: number; reminder_max_contacts: number; eligible_failure_types: string[]; permitted_action_types: RecoveryActionType[];
+      minimum_confidence_bps: number; reminder_max_contacts: number; eligible_failure_types: RecoveryCandidate["failureType"][]; permitted_action_types: RecoveryActionType[];
     }>(`
       select version, auto_action_amount_cap_paise, max_retries, requires_consent,
         minimum_confidence_bps, reminder_max_contacts, eligible_failure_types, permitted_action_types
       from public.merchant_policies where merchant_id = $1 and is_active = true limit 1
     `, [merchant.id]);
     return policy.rows[0] ?? null;
+  });
+}
+
+type DashboardCaseRow = {
+  case_reference: string;
+  customer_identity_snapshot: string;
+  amount_snapshot_paise: number;
+  state: RecoveryCaseState;
+  failure_type: RecoveryCandidate["failureType"];
+  confidence_bps: number | null;
+  terminal_reason: string | null;
+  updated_at: Date;
+  action_type: RecoveryActionType | null;
+  provider_reference: string | null;
+  expires_at: Date | null;
+};
+
+function reasonForState(state: string) {
+  if (state === "RECOVERED") return "Verified recovery outcome was persisted once.";
+  if (state === "STOPPED") return "Recovery stopped safely under the merchant policy.";
+  if (state === "EXCEPTION") return "Recovery is isolated for merchant review.";
+  if (state === "APPROVAL_PENDING") return "Merchant approval is required before the bounded action can run.";
+  if (state === "AWAITING_OUTCOME") return "Bounded action dispatched; verified outcome is awaited.";
+  return "Verified failure is available for governed recovery evaluation.";
+}
+
+function riskForState(state: string) {
+  if (state === "RECOVERED") return "Recovered";
+  if (state === "STOPPED") return "Stopped safely";
+  if (state === "EXCEPTION") return "Exception";
+  if (state === "APPROVAL_PENDING") return "Merchant review";
+  return "Low";
+}
+
+export async function bootstrapSupabaseRecoveryWorkspace(user: SupabaseMerchantUser) {
+  const state = await withTransaction(async client => {
+    const merchant = await ensureMerchant(client, user);
+    const count = await client.query<{ count: string }>("select count(*)::text as count from public.recovery_cases where merchant_id = $1", [merchant.id]);
+    return Number(count.rows[0]?.count ?? 0) === 0;
+  });
+  if (!state) return;
+  for (const item of getSandboxSnapshot().cases) {
+    await persistSandboxCaseForSupabaseUser(user, getSandboxCaseForPersistence(item.id));
+  }
+}
+
+export async function getSupabaseDashboardSnapshotForUser(user: SupabaseMerchantUser) {
+  return withTransaction(async client => {
+    const merchant = await ensureMerchant(client, user);
+    const policy = await client.query<{
+      version: number; auto_action_amount_cap_paise: number; max_retries: number; requires_consent: boolean;
+      minimum_confidence_bps: number; reminder_max_contacts: number; eligible_failure_types: RecoveryCandidate["failureType"][]; permitted_action_types: RecoveryActionType[];
+    }>(`select version, auto_action_amount_cap_paise, max_retries, requires_consent, minimum_confidence_bps, reminder_max_contacts, eligible_failure_types, permitted_action_types from public.merchant_policies where merchant_id = $1 and is_active = true limit 1`, [merchant.id]);
+    const cases = await client.query<DashboardCaseRow>(`
+      select rc.case_reference, rc.customer_identity_snapshot, rc.amount_snapshot_paise, rc.state, event.failure_type,
+        diagnosis.confidence_bps, rc.terminal_reason, rc.updated_at, action.action_type, action.provider_reference, action.expires_at
+      from public.recovery_cases rc
+      join public.payment_events event on event.id = rc.payment_event_id
+      left join lateral (select confidence_bps from public.diagnoses where recovery_case_id = rc.id order by created_at desc limit 1) diagnosis on true
+      left join lateral (select action_type, provider_reference, expires_at from public.recovery_actions where recovery_case_id = rc.id order by created_at desc limit 1) action on true
+      where rc.merchant_id = $1 order by rc.created_at desc
+    `, [merchant.id]);
+    const audit = await client.query<{ actor_type: "SYSTEM" | "MERCHANT" | "RAZORPAY" | "AI"; event_type: string; payload: { detail?: string; time?: string } | null; created_at: Date }>(`
+      select audit.actor_type, audit.event_type, audit.payload, audit.created_at
+      from public.audit_entries audit join public.recovery_cases rc on rc.id = audit.recovery_case_id
+      where rc.merchant_id = $1 order by audit.created_at desc limit 8
+    `, [merchant.id]);
+    const receipts = await client.query<{ source_event_id: string; processing_status: "PROCESSED" | "DUPLICATE" | "REJECTED" | "EXCEPTION"; received_at: Date }>(`
+      select source_event_id, processing_status, received_at from public.webhook_receipts where merchant_id = $1 order by received_at desc limit 8
+    `, [merchant.id]);
+    const mappedCases = cases.rows.map(row => ({
+      id: row.case_reference, customer: row.customer_identity_snapshot, amountPaise: Number(row.amount_snapshot_paise), state: row.state,
+      failureType: row.failure_type, confidence: Math.round((row.confidence_bps ?? 8000) / 100), reason: row.terminal_reason ?? reasonForState(row.state),
+      updatedAt: row.updated_at.toLocaleString("en-IN"), risk: riskForState(row.state), actionType: row.action_type,
+      paymentLink: row.provider_reference && row.action_type === "PAYMENT_LINK_FALLBACK" ? {
+        provider: row.provider_reference.startsWith("plink_sim_") ? "RAZORPAY_TEST_MODE_SIMULATION" as const : "RAZORPAY_TEST_MODE" as const,
+        providerReference: row.provider_reference, shortUrl: "", amountPaise: Number(row.amount_snapshot_paise), currency: "INR" as const,
+        expiresAt: row.expires_at ?? new Date(), idempotencyKey: `persisted:${row.case_reference}:${row.action_type}`,
+        sandboxNotice: "Razorpay Test Mode — Sandbox: no real money is moved.",
+      } : null,
+    }));
+    const total = mappedCases.length;
+    const recovered = mappedCases.filter(item => item.state === "RECOVERED");
+    const stopped = mappedCases.filter(item => item.state === "STOPPED");
+    const exceptions = mappedCases.filter(item => item.state === "EXCEPTION");
+    const active = policy.rows[0];
+    if (!active) throw new Error("Supabase recovery policy is not initialized");
+    return {
+      policy: { version: active.version, autoActionAmountCapPaise: Number(active.auto_action_amount_cap_paise), minimumConfidenceBps: active.minimum_confidence_bps, maxRetries: active.max_retries, requiresConsent: active.requires_consent, reminderMaxContacts: active.reminder_max_contacts, eligibleFailureTypes: active.eligible_failure_types, permittedActionTypes: active.permitted_action_types },
+      metrics: { recoveredRevenuePaise: recovered.reduce((sum, item) => sum + item.amountPaise, 0), revenueAtRiskPaise: mappedCases.reduce((sum, item) => sum + item.amountPaise, 0), recoveryRate: total ? Math.round((recovered.length / total) * 1000) / 10 : 0, actionPrecision: recovered.length + exceptions.length ? Math.round((recovered.length / (recovered.length + exceptions.length)) * 1000) / 10 : 0, falsePositiveCostPaise: 0, exceptionRate: total ? Math.round((exceptions.length / total) * 1000) / 10 : 0, baselineLift: 0, stoppingRuleCompliance: total ? Math.round((stopped.length / total) * 100) : 100, recordCount: total, heldOutCount: 0 },
+      cases: mappedCases,
+      audit: audit.rows.map(entry => ({ actor: entry.actor_type, event: entry.event_type, detail: entry.payload?.detail ?? "Durable audit event recorded.", time: entry.payload?.time ?? entry.created_at.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false }) })),
+      receipts: receipts.rows.map(receipt => ({ sourceEventId: receipt.source_event_id, eventType: "signed webhook", status: receipt.processing_status, detail: `Signed webhook receipt persisted at ${receipt.received_at.toLocaleString("en-IN")}.`, time: receipt.received_at.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false }) })),
+    };
+  });
+}
+
+export async function getSupabaseCaseRuntimeSnapshot(user: SupabaseMerchantUser, caseReference: string) {
+  const policy = await getSupabaseActivePolicyForUser(user);
+  if (!policy) return null;
+  return withTransaction(async client => {
+    const merchant = await ensureMerchant(client, user);
+    const caseRow = await client.query<{
+      case_reference: string; source_event_id: string; state: RecoveryCaseState; terminal_reason: string | null;
+      amount_snapshot_paise: number; customer_identity_snapshot: string; external_payment_id_snapshot: string;
+      retry_count: number; reminder_count: number; failure_type: RecoveryCandidate["failureType"]; consent_granted: boolean; payload: RecoveryCandidate;
+      action_type: RecoveryActionType | null; provider_reference: string | null; expires_at: Date | null;
+    }>(`
+      select rc.case_reference, event.source_event_id, rc.state, rc.terminal_reason,
+        rc.amount_snapshot_paise, rc.customer_identity_snapshot, rc.external_payment_id_snapshot,
+        rc.retry_count, rc.reminder_count, event.failure_type, event.consent_granted, event.payload,
+        action.action_type, action.provider_reference, action.expires_at
+      from public.recovery_cases rc
+      join public.payment_events event on event.id = rc.payment_event_id
+      left join lateral (select action_type, provider_reference, expires_at from public.recovery_actions where recovery_case_id = rc.id order by created_at desc limit 1) action on true
+      where rc.merchant_id = $1 and rc.case_reference = $2
+      limit 1
+    `, [merchant.id, caseReference]);
+    const found = caseRow.rows[0];
+    if (!found) return null;
+    const diagnosis = await client.query<{
+      failure_cause: RecoveryCandidate["failureType"]; confidence_bps: number; evidence: GroundedDiagnosis["evidence"]; explanation: string;
+      recommended_action: RecoveryActionType; uncertainty_reason: string | null; model_id: string;
+    }>(`select failure_cause, confidence_bps, evidence, explanation, recommended_action, uncertainty_reason, model_id from public.diagnoses diagnosis join public.recovery_cases rc on rc.id = diagnosis.recovery_case_id where rc.merchant_id = $1 and rc.case_reference = $2 order by diagnosis.created_at desc limit 1`, [merchant.id, caseReference]);
+    const audit = await client.query<{ actor_type: "SYSTEM" | "MERCHANT" | "RAZORPAY" | "AI"; event_type: string; payload: { detail?: string; time?: string } | null; created_at: Date }>(`
+      select audit.actor_type, audit.event_type, audit.payload, audit.created_at
+      from public.audit_entries audit join public.recovery_cases rc on rc.id = audit.recovery_case_id
+      where rc.merchant_id = $1 and rc.case_reference = $2 order by audit.sequence
+    `, [merchant.id, caseReference]);
+    const diagnosisRow = diagnosis.rows[0];
+    const candidate = found.payload && typeof found.payload === "object" ? found.payload : {
+      amountPaise: Number(found.amount_snapshot_paise), customerIdentity: found.customer_identity_snapshot, externalPaymentId: found.external_payment_id_snapshot,
+      failureType: found.failure_type, consentGranted: found.consent_granted, retryCount: found.retry_count, reminderCount: found.reminder_count,
+      confidenceBps: 8000, isAmbiguous: false, hasRiskFlag: false, alreadyResolved: false,
+    };
+    return {
+      policy: {
+        version: policy.version,
+        autoActionAmountCapPaise: policy.auto_action_amount_cap_paise,
+        minimumConfidenceBps: policy.minimum_confidence_bps,
+        maxRetries: policy.max_retries,
+        requiresConsent: policy.requires_consent,
+        reminderMaxContacts: policy.reminder_max_contacts,
+        eligibleFailureTypes: policy.eligible_failure_types,
+        permittedActionTypes: policy.permitted_action_types,
+      },
+      case: {
+        caseReference: found.case_reference,
+        sourceEventId: found.source_event_id,
+        state: found.state,
+        actionType: found.action_type,
+        terminalReason: found.terminal_reason,
+        candidate,
+        paymentLink: found.provider_reference && found.action_type === "PAYMENT_LINK_FALLBACK" ? {
+          provider: found.provider_reference.startsWith("plink_sim_") ? "RAZORPAY_TEST_MODE_SIMULATION" as const : "RAZORPAY_TEST_MODE" as const,
+          providerReference: found.provider_reference, shortUrl: "", amountPaise: Number(found.amount_snapshot_paise), currency: "INR" as const,
+          expiresAt: found.expires_at ?? new Date(), idempotencyKey: `persisted:${found.case_reference}:${found.action_type}`,
+          sandboxNotice: "Razorpay Test Mode — Sandbox: no real money is moved.",
+        } : null,
+        diagnosis: diagnosisRow ? {
+          failureCause: diagnosisRow.failure_cause, confidenceBps: diagnosisRow.confidence_bps, evidence: diagnosisRow.evidence,
+          explanation: diagnosisRow.explanation, recommendedAction: diagnosisRow.recommended_action,
+          uncertaintyReason: diagnosisRow.uncertainty_reason ?? undefined, modelId: diagnosisRow.model_id,
+        } : null,
+        audit: audit.rows.map(entry => ({ actor: entry.actor_type, event: entry.event_type, detail: entry.payload?.detail ?? "Durable audit event recorded.", time: entry.payload?.time ?? entry.created_at.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false }) })),
+        reason: found.terminal_reason ?? reasonForState(found.state),
+        risk: riskForState(found.state),
+      },
+    };
   });
 }
 

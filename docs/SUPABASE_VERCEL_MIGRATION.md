@@ -24,6 +24,10 @@ The browser will receive only the Supabase project URL and publishable key. The 
 
 On 23 August 2026, the provisioned admin account completed a real browser sign-in and loaded the protected RecoverFlow dashboard. A live Supabase persistence regression also wrote and reread a governed recovery state transition and its audit entries using the transaction pooler.
 
+The authenticated dashboard has since been verified against the full Supabase query layer. It rendered non-seed persisted recovery cases, the active merchant policy including human escalation, immutable audit history, and signed webhook receipt history directly from Postgres. Those reads no longer depend on the in-memory fixture overview after a serverless restart.
+
+The restart-safe mutation path was also exercised in the authenticated browser: after a fresh server start, a non-seed persisted case reloaded from Supabase in `AWAITING_OUTCOME`, accepted a simulated verified outcome, and refreshed to `RECOVERED` with the new immutable audit entry. This Test Mode verification moved no real money and contacted no customer.
+
 Row-level security will restrict all merchant-owned rows to the authenticated merchant profile. Webhook ingestion will use a server-only service client after validating Razorpay’s HMAC signature, because Razorpay does not carry an end-user Supabase session.
 
 ## Required Supabase and Vercel Inputs

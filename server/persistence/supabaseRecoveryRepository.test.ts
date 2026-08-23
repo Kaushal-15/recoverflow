@@ -1,7 +1,7 @@
 import { Pool } from "pg";
 import { describe, expect, it } from "vitest";
 import { getSandboxCaseForPersistence, resetSandboxStore } from "../recovery/sandboxEngine";
-import { getSupabasePersistedCaseOverrides, persistSandboxCaseForSupabaseUser } from "./supabaseRecoveryRepository";
+import { getSupabaseDashboardSnapshotForUser, getSupabasePersistedCaseOverrides, persistSandboxCaseForSupabaseUser } from "./supabaseRecoveryRepository";
 
 describe("Supabase recovery repository", () => {
   it("persists a governed sandbox snapshot for the provisioned admin and preserves its audit chain", async () => {
@@ -61,6 +61,17 @@ describe("Supabase recovery repository", () => {
         terminal_reason: snapshot.terminalReason,
         action_type: "PAYMENT_LINK_FALLBACK",
       });
+
+      const dashboard = await getSupabaseDashboardSnapshotForUser({
+        id: admin.rows[0]!.id,
+        email: admin.rows[0]!.email,
+        name: admin.rows[0]!.display_name,
+      });
+      expect(dashboard?.cases.find(item => item.id === snapshot.caseReference)).toMatchObject({
+        state: "RECOVERED",
+        reason: snapshot.terminalReason,
+      });
+      expect(dashboard?.audit.length).toBeGreaterThan(0);
     } finally {
       await pool.end();
     }

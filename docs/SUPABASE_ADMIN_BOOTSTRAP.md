@@ -43,6 +43,6 @@ Set these values in **Vercel → Project Settings → Environment Variables** fo
 
 Deploy the repository with Vercel after those variables are set. The included `vercel.json` builds the Vite client and routes API traffic to the exported Express application. Configure Supabase Auth URL Configuration with the Vercel production URL and any Vercel preview URL patterns used for testing.
 
-## Remaining Activation Boundary
+## Activation Status
 
-The protected admin sign-in page, token verification, and Supabase persistence repository are implemented. The final server-side activation of webhook persistence and admin provisioning waits for `SUPABASE_SERVICE_ROLE_KEY`; this key must never be supplied to the browser or committed to Git.
+The protected admin sign-in page, token verification, Supabase persistence repository, and server-only signed Razorpay webhook persistence are active and regression-tested. The service-role key now supports receipt idempotency and verified Payment Link outcome persistence only after HMAC validation. It must remain server-only and must never be supplied to the browser or committed to Git.

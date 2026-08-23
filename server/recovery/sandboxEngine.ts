@@ -9,6 +9,7 @@ type SandboxAuditEntry = { time: string; actor: "RAZORPAY" | "SYSTEM" | "AI" | "
 type SandboxReceipt = { sourceEventId: string; eventType: string; status: "PROCESSED" | "DUPLICATE" | "REJECTED" | "EXCEPTION"; detail: string; time: string };
 type SandboxCase = {
   id: string;
+  sourceEventId: string;
   candidate: RecoveryCandidate;
   state: RecoveryCaseState;
   actionType: RecoveryActionType | null;
@@ -41,6 +42,21 @@ export function getSandboxPolicy() {
   return { ...activePolicy, eligibleFailureTypes: [...activePolicy.eligibleFailureTypes], permittedActionTypes: [...activePolicy.permittedActionTypes], version: policyVersion };
 }
 
+export function hydrateSandboxPolicy(input: ReturnType<typeof getSandboxPolicy>) {
+  activePolicy = {
+    ...activePolicy,
+    autoActionAmountCapPaise: input.autoActionAmountCapPaise,
+    maxRetries: input.maxRetries,
+    requiresConsent: input.requiresConsent,
+    minimumConfidenceBps: input.minimumConfidenceBps,
+    reminderMaxContacts: input.reminderMaxContacts,
+    eligibleFailureTypes: [...input.eligibleFailureTypes],
+    permittedActionTypes: [...input.permittedActionTypes],
+  };
+  policyVersion = input.version;
+  return getSandboxPolicy();
+}
+
 export function updateSandboxPolicy(input: Pick<typeof activePolicy, "eligibleFailureTypes" | "permittedActionTypes" | "autoActionAmountCapPaise" | "maxRetries" | "requiresConsent" | "minimumConfidenceBps" | "reminderMaxContacts">) {
   activePolicy = { ...activePolicy, ...input, eligibleFailureTypes: [...input.eligibleFailureTypes], permittedActionTypes: [...input.permittedActionTypes] };
   policyVersion += 1;
@@ -51,8 +67,8 @@ function now() {
   return new Date().toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false });
 }
 
-function seedCase(input: Omit<SandboxCase, "audit" | "paymentLink" | "updatedAt" | "diagnosis"> & { audit?: SandboxAuditEntry[] }): SandboxCase {
-  return { ...input, updatedAt: "just now", audit: input.audit ?? [], paymentLink: null, diagnosis: null };
+function seedCase(input: Omit<SandboxCase, "audit" | "paymentLink" | "updatedAt" | "diagnosis" | "sourceEventId"> & { audit?: SandboxAuditEntry[]; sourceEventId?: string }): SandboxCase {
+  return { ...input, sourceEventId: input.sourceEventId ?? `sandbox:${input.id}`, updatedAt: "just now", audit: input.audit ?? [], paymentLink: null, diagnosis: null };
 }
 
 function resetIfNeeded() {
@@ -134,7 +150,7 @@ function resetIfNeeded() {
   ];
   entries.forEach(entry => {
     store.set(entry.id, entry);
-    sourceEventIndex.set(`seed_${entry.id}`, entry.id);
+    sourceEventIndex.set(entry.sourceEventId, entry.id);
   });
 }
 
@@ -174,7 +190,7 @@ export function getSandboxCaseForPersistence(caseId: string) {
   const item = requireCase(caseId);
   return {
     caseReference: item.id,
-    sourceEventId: `sandbox:${item.id}`,
+    sourceEventId: item.sourceEventId,
     state: item.state,
     actionType: item.actionType,
     terminalReason: isTerminalState(item.state) ? item.reason : null,
@@ -183,6 +199,27 @@ export function getSandboxCaseForPersistence(caseId: string) {
     diagnosis: item.diagnosis,
     audit: [...item.audit],
   };
+}
+
+export function hydrateSandboxCase(input: ReturnType<typeof getSandboxCaseForPersistence> & { reason?: string; risk?: string }) {
+  resetIfNeeded();
+  const item: SandboxCase = {
+    id: input.caseReference,
+    sourceEventId: input.sourceEventId,
+    candidate: { ...input.candidate },
+    state: input.state,
+    actionType: input.actionType,
+    reason: input.terminalReason ?? input.reason ?? "Durable Supabase recovery case restored for governed review.",
+    risk: input.risk ?? (input.state === "RECOVERED" ? "Recovered" : input.state === "STOPPED" ? "Stopped safely" : input.state === "EXCEPTION" ? "Exception" : input.state === "APPROVAL_PENDING" ? "Merchant review" : "Low"),
+    updatedAt: "restored from Supabase",
+    audit: [...input.audit],
+    paymentLink: input.paymentLink ? { ...input.paymentLink } : null,
+    diagnosis: input.diagnosis ? { ...input.diagnosis, evidence: { ...input.diagnosis.evidence } } : null,
+  };
+  store.set(item.id, item);
+  sourceEventIndex.set(input.sourceEventId, item.id);
+  if (item.paymentLink) providerReferenceIndex.set(item.paymentLink.providerReference, item.id);
+  return displayCase(item);
 }
 
 export async function runManualRecovery(caseId: string) {
