@@ -1,9 +1,9 @@
-import type { Express, Request, Response } from "express";
+import { raw, type Express, type Request, type Response } from "express";
 import { digestRawPayload, normalizeFailedPaymentEvent, verifyRazorpayWebhookSignature } from "./ingestion";
 import { applyRazorpayPaymentLinkOutcome, ingestSandboxEvent } from "./sandboxEngine";
 
 export function registerRazorpayWebhook(app: Express) {
-  app.post("/api/webhooks/razorpay", async (req: Request, res: Response) => {
+  app.post("/api/webhooks/razorpay", raw({ type: "application/json" }), async (req: Request, res: Response) => {
     const rawBody = Buffer.isBuffer(req.body) ? req.body : Buffer.from("");
     const signature = req.header("X-Razorpay-Signature") ?? undefined;
     const secret = process.env.RAZORPAY_WEBHOOK_SECRET;
