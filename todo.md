@@ -64,5 +64,5 @@
 - [x] Add regression tests and browser verification for approved, rejected, recovered, expired, and bulk-decision action paths.
 - [x] Perform real browser interaction verification after the repair for manual recovery, approval, rejection, simulated recovery, simulated expiry, and guarded bulk approval.
 - [x] Capture and document post-repair browser evidence showing that case state updates and success feedback are rendered in the dashboard.
-- [ ] Correct the Razorpay Test Mode webhook URL, restrict its active events, and configure a separate signing secret.
-- [ ] Verify signed webhook delivery against the deployed RecoverFlow receiver and document the activation result.
+- [x] Confirm the saved Razorpay Test Mode webhook URL and active-event selection match the deployed RecoverFlow receiver configuration.
+- [x] Verify signed webhook delivery against the deployed RecoverFlow receiver and document the activation result.
