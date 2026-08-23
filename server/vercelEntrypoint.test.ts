@@ -6,6 +6,8 @@ describe("Vercel serverless entrypoint", () => {
   it("uses Vercel's supported TypeScript function entrypoint and traces the explicit server bundle", () => {
     const entry = resolve(process.cwd(), "api/index.ts");
     expect(existsSync(entry)).toBe(true);
-    expect(readFileSync(entry, "utf8")).toContain("../dist/vercel-app.cjs");
+    const source = readFileSync(entry, "utf8");
+    expect(source).toContain("createRequire(import.meta.url)");
+    expect(source).toContain("../dist/vercel-app.cjs");
   });
 });
