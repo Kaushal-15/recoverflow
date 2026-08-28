@@ -297,26 +297,39 @@
 .dark table tbody tr:last-child { box-shadow: inset 3px 0 0 oklch(0.78 0.13 165); }
 @media (max-width: 640px) { .rf-command-surface::before { right: 1rem; bottom: 0.8rem; font-size: 0.45rem; letter-spacing: 0.1em; } .rf-command-surface::after { width: 50%; } }
 
-/* Public story surface: intentional depth with accessible, transform-only motion. */
+/* Public story surface: premium framed canvas with scroll-linked 3D payment objects. */
 .rf-public { background-image: radial-gradient(circle at 90% 0%, oklch(0.85 0.08 192 / 35%), transparent 28%), radial-gradient(circle at 5% 38%, oklch(0.9 0.05 202 / 38%), transparent 32%); }
 .dark .rf-public { background-image: radial-gradient(circle at 90% 0%, oklch(0.38 0.1 198 / 28%), transparent 28%), radial-gradient(circle at 5% 38%, oklch(0.25 0.06 219 / 34%), transparent 32%); }
 .rf-logo-mark { background: linear-gradient(145deg, oklch(0.47 0.13 205), oklch(0.56 0.14 170)); }
-.rf-public-glow { background: oklch(0.72 0.12 188 / 26%); }
-.rf-3d-stage { transform: rotateY(-6deg) rotateX(4deg); transform-style: preserve-3d; transition: transform 500ms cubic-bezier(.23,1,.32,1), box-shadow 500ms cubic-bezier(.23,1,.32,1); }
-.rf-3d-stage:hover { transform: rotateY(0deg) rotateX(0deg) translateY(-8px); box-shadow: 0 46px 100px -30px rgba(8,33,51,.7); }
-.rf-flow-layer { transform: translateZ(24px); transition: transform 300ms cubic-bezier(.23,1,.32,1), background-color 300ms ease; }
-.rf-3d-stage:hover .rf-flow-layer:nth-child(1) { transform: translateZ(52px) translateX(8px); }
-.rf-3d-stage:hover .rf-flow-layer:nth-child(2) { transform: translateZ(42px) translateX(4px); }
-.rf-3d-stage:hover .rf-flow-layer:nth-child(3) { transform: translateZ(32px); }
-.rf-orbit { position: absolute; border: 1px solid oklch(0.7 0.11 192 / 42%); border-radius: 999px; pointer-events: none; }
-.rf-orbit-a { inset: 10% -8% -7% 5%; transform: rotate(-18deg); }
-.rf-orbit-b { inset: 24% 6% -13% -10%; border-color: oklch(0.66 0.12 167 / 34%); transform: rotate(19deg); }
-.rf-floating-proof { animation: rf-float 5s ease-in-out infinite; }
+.rf-hero-frame { isolation: isolate; }
+.rf-hero-noise { background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 160 160' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.95' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.14'/%3E%3C/svg%3E"); mix-blend-mode: screen; }
+.rf-hero-glow-one { background: oklch(0.64 0.13 194 / 19%); }
+.rf-hero-glow-two { background: oklch(0.55 0.14 168 / 17%); }
+.rf-payment-scene { transform-style: preserve-3d; }
+.rf-scene-grid { position: absolute; inset: 7% -8% 8% 3%; transform: rotateX(63deg) rotateZ(-10deg) translateZ(-100px); transform-origin: center; opacity: .25; background-image: linear-gradient(rgb(103 232 249 / 22%) 1px, transparent 1px), linear-gradient(90deg, rgb(103 232 249 / 22%) 1px, transparent 1px); background-size: 42px 42px; mask-image: radial-gradient(ellipse, black, transparent 72%); }
+.rf-scene-ring { position: absolute; border: 1px solid rgb(103 232 249 / 24%); border-radius: 999px; pointer-events: none; transform-style: preserve-3d; }
+.rf-scene-ring-one { inset: 4% 4% 9% 4%; transform: rotateX(66deg) rotateZ(-15deg); }
+.rf-scene-ring-two { inset: 16% -8% 0% -3%; border-color: rgb(45 212 191 / 24%); transform: rotateX(62deg) rotateZ(20deg); }
+.rf-payment-card { position: absolute; display: flex; flex-direction: column; border: 1px solid rgb(255 255 255 / 28%); border-radius: 1.55rem; box-shadow: 0 32px 65px -24px rgb(0 0 0 / 58%), inset 0 1px rgb(255 255 255 / 22%); transform-style: preserve-3d; backface-visibility: hidden; overflow: hidden; }
+.rf-payment-card::after { content: ""; position: absolute; inset: 0; background: linear-gradient(135deg, rgb(255 255 255 / 18%), transparent 34%, transparent 67%, rgb(255 255 255 / 8%)); pointer-events: none; }
+.rf-payment-card-a { left: 7%; top: 18%; width: 56%; height: 215px; padding: 1.6rem; background: linear-gradient(135deg, #253238, #101a1e 48%, #0b1114); transform: translate3d(var(--rf-card-a-x), var(--rf-card-a-y), 90px) rotateZ(-10deg) rotateY(16deg); }
+.rf-payment-card-b { right: 4%; top: 37%; width: 58%; height: 218px; padding: 1.6rem; background: linear-gradient(135deg, #a4c7bf, #496c68 54%, #203e3f); color: #effffc; transform: translate3d(var(--rf-card-b-x), var(--rf-card-b-y), 30px) rotateZ(8deg) rotateY(-17deg); }
+.rf-payment-card-c { left: 24%; bottom: 7%; width: 52%; min-height: 116px; padding: 1.25rem 1.4rem; background: linear-gradient(135deg, #0e343d, #092128 56%, #112b37); transform: translate3d(0, var(--rf-card-c-y), 150px) rotateZ(-2deg) rotateY(5deg); }
+.rf-card-brand { position: relative; z-index: 1; font-family: "Space Grotesk", sans-serif; font-size: 1.05rem; font-weight: 700; letter-spacing: -.04em; }
+.rf-card-chip { position: relative; z-index: 1; display: block; width: 34px; height: 24px; margin-top: 2.1rem; border: 1px solid rgb(255 255 255 / 35%); border-radius: .4rem; background: linear-gradient(135deg, #c1dfcf, #55776e); box-shadow: inset 0 0 0 1px rgb(255 255 255 / 20%); }
+.rf-card-chip-soft { background: linear-gradient(135deg, #e7f5e9, #98b8ab); }
+.rf-card-label { position: relative; z-index: 1; margin-top: auto; font-size: .58rem; font-weight: 700; letter-spacing: .17em; opacity: .68; }
+.rf-payment-card strong { position: relative; z-index: 1; margin-top: .35rem; font-family: "Space Grotesk", sans-serif; font-size: 1.75rem; letter-spacing: -.06em; }
+.rf-card-meta { position: relative; z-index: 1; margin-top: .28rem; font-size: .68rem; opacity: .72; }
+.rf-live-dot { position: relative; z-index: 1; width: 7px; height: 7px; border-radius: 999px; background: #67e8f9; box-shadow: 0 0 0 5px rgb(103 232 249 / 12%), 0 0 18px #67e8f9; }
+.rf-scene-core { position: absolute; left: 39%; top: 44%; z-index: 5; display: flex; width: 134px; height: 134px; flex-direction: column; align-items: center; justify-content: center; border: 1px solid rgb(165 243 252 / 32%); border-radius: 2rem; background: rgb(11 31 36 / 80%); box-shadow: 0 24px 60px -28px rgb(0 0 0 / 70%), inset 0 1px rgb(255 255 255 / 14%); transform: translate3d(0, var(--rf-card-c-y), 190px) rotateZ(-4deg); backdrop-filter: blur(12px); }
+.rf-core-mark { display: grid; height: 50px; width: 50px; place-items: center; border-radius: 1.15rem; background: linear-gradient(135deg, #67e8f9, #14b8a6); color: #092128; box-shadow: 0 12px 28px -12px #67e8f9; }
+.rf-scene-proof { position: absolute; right: 2%; bottom: 0; z-index: 7; display: flex; min-width: 164px; flex-direction: column; border: 1px solid rgb(255 255 255 / 18%); border-radius: 1.2rem; background: rgb(255 255 255 / 8%); padding: .9rem 1rem; box-shadow: 0 22px 45px -26px rgb(0 0 0 / 75%); transform: translate3d(var(--rf-card-b-x), -8px, 230px) rotateZ(3deg); backdrop-filter: blur(16px); }
+.rf-scene-proof strong { margin-top: .25rem; font-family: "Space Grotesk", sans-serif; font-size: 2rem; letter-spacing: -.07em; color: #a5f3fc; }
 .rf-step-card { transition: transform 300ms cubic-bezier(.23,1,.32,1), box-shadow 300ms ease; }
 .rf-step-card:hover { transform: translateY(-8px) rotateX(2deg); box-shadow: 0 24px 48px oklch(0.18 0.03 225 / 12%); }
 .rf-tilt-card { transform: perspective(900px) rotateX(0deg) rotateY(0deg); transition: transform 350ms cubic-bezier(.23,1,.32,1), border-color 350ms ease, background-color 350ms ease; }
 .rf-tilt-card:hover { transform: perspective(900px) rotateX(4deg) rotateY(-3deg) translateY(-7px); border-color: rgb(103 232 249 / 42%); background-color: rgb(255 255 255 / 9%); }
 .rf-cta-surface::after { content: "VERIFY · ACT · RECORD"; position: absolute; right: 2rem; bottom: 1.25rem; font-family: "Space Grotesk", sans-serif; font-size: .6rem; font-weight: 700; letter-spacing: .16em; color: oklch(0.55 0.12 196 / 35%); }
-@keyframes rf-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
-@media (prefers-reduced-motion: reduce) { .rf-3d-stage, .rf-flow-layer, .rf-step-card, .rf-tilt-card, .rf-floating-proof { animation: none !important; transition: none !important; transform: none !important; } }
-@media (max-width: 640px) { .rf-3d-stage { transform: none; } .rf-floating-proof { position: relative; left: auto; bottom: auto; margin: 1rem 0 0 1rem; width: max-content; } .rf-cta-surface::after { right: 1rem; bottom: .85rem; font-size: .48rem; } }
+@media (prefers-reduced-motion: reduce) { .rf-payment-card, .rf-scene-core, .rf-scene-proof, .rf-scene-ring, .rf-scene-grid, .rf-step-card, .rf-tilt-card { transition: none !important; transform: none !important; } }
+@media (max-width: 640px) { .rf-hero-frame { border-radius: 1.55rem; } .rf-payment-scene { min-height: 380px; transform: scale(.86); transform-origin: center; margin: -1rem -2rem; width: calc(100% + 4rem); } .rf-payment-card-a, .rf-payment-card-b { height: 155px; padding: 1rem; } .rf-payment-card-c { min-height: 88px; padding: .85rem 1rem; } .rf-card-chip { margin-top: 1.15rem; width: 28px; height: 19px; } .rf-payment-card strong { font-size: 1.35rem; } .rf-scene-core { width: 108px; height: 108px; left: 38%; top: 43%; } .rf-scene-proof { right: 0; min-width: 140px; padding: .7rem .8rem; } .rf-scene-proof strong { font-size: 1.6rem; } .rf-cta-surface::after { right: 1rem; bottom: .85rem; font-size: .48rem; } }
