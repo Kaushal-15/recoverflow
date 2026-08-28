@@ -78,10 +78,13 @@
 - [x] Verify real browser actions on a persisted non-seed Supabase case after a server restart and confirm its audit and receipt history remain available.
 - [x] Reproduce and diagnose the Vercel deployment’s 500 responses for `/api/trpc/recovery.*` requests.
 - [x] Repair the Vercel serverless API entrypoint, routing, and runtime configuration so tRPC returns JSON responses.
-- [ ] Verify the deployed Vercel dashboard loads the Supabase-backed recovery workspace and document the redeployment steps.
+- [x] Verify the deployed Vercel dashboard loads the Supabase-backed recovery workspace and document the redeployment steps.
 - [x] Redeploy the corrected build to Vercel and verify `/api/trpc/recovery.overview` returns a valid tRPC JSON response rather than an HTML 500 page.
-- [ ] Open the redeployed Vercel dashboard and capture concrete evidence that the Supabase-backed recovery workspace finishes loading.
+- [x] Open the redeployed Vercel dashboard and capture concrete evidence that the Supabase-backed recovery workspace finishes loading.
 - [x] Create a pitch-video-ready high-level architecture explanation for the Razorpay AI Buildathon submission.
 - [x] Rework the public RecoverFlow home page into a Razorpay-inspired framed 3D scrolling experience while preserving dashboard functionality and Test Mode messaging.
 - [x] Validate the new public UI on desktop and mobile, including reduced-motion behavior and the existing dashboard route.
 - [x] Verify the public landing page with reduced motion enabled and confirm the 3D scene disables gracefully.
+- [x] Disable the new console rail, nodes, and console-card transforms under reduced-motion preferences and rerun the accessibility check.
+- [x] Elevate the public RecoverFlow landing page with cinematic 3D scroll choreography, richer depth transitions, and stronger wow-factor visual moments.
+- [x] Validate the enhanced public experience across desktop, tablet, mobile, reduced motion, and the preserved dashboard/auth route.
