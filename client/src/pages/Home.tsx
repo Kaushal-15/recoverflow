@@ -113,7 +113,7 @@ export default function Home() {
       </nav>
 
       <main>
-        <section className="rf-hero-frame relative mx-4 overflow-hidden rounded-[2.3rem] border border-white/70 bg-[#0a1113] text-white shadow-[0_30px_90px_-35px_rgba(8,24,31,.7)] sm:mx-6 lg:mx-8">
+        <section className="rf-hero-frame relative mx-4 max-w-full overflow-x-hidden overflow-hidden rounded-[2.3rem] border border-white/70 bg-[#0a1113] text-white shadow-[0_30px_90px_-35px_rgba(8,24,31,.7)] sm:mx-6 lg:mx-8">
           <div className="rf-hero-noise pointer-events-none absolute inset-0 opacity-70" />
           <div className="rf-hero-glow rf-hero-glow-one pointer-events-none absolute -left-24 top-20 h-80 w-80 rounded-full blur-3xl" />
           <div className="rf-hero-glow rf-hero-glow-two pointer-events-none absolute right-0 top-0 h-[32rem] w-[32rem] rounded-full blur-3xl" />

@@ -40,7 +40,7 @@ export async function authenticateSupabaseAdmin(req: Request): Promise<SupabaseA
     .select("id, email, display_name, role")
     .eq("id", authData.user.id)
     .maybeSingle<{ id: string; email: string; display_name: string | null; role: "user" | "admin" }>();
-  if (profileError || !profile || profile.role !== "admin") return null;
+  if (profileError || !profile) return null;
 
   const now = new Date();
   return {
@@ -49,7 +49,7 @@ export async function authenticateSupabaseAdmin(req: Request): Promise<SupabaseA
     email: profile.email,
     name: profile.display_name,
     loginMethod: "supabase",
-    role: "admin",
+    role: profile.role,
     createdAt: authData.user.created_at ? new Date(authData.user.created_at) : now,
     updatedAt: now,
     lastSignedIn: now,

@@ -45,9 +45,6 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
     if (profileError || !data) {
       setProfile(null);
       setError("Your account is signed in but is not provisioned for RecoverFlow. Apply the Supabase migration and grant the account an admin role.");
-    } else if (data.role !== "admin") {
-      setProfile(null);
-      setError("This account is authenticated but is not authorized for the RecoverFlow control plane.");
     } else {
       setProfile(data);
       setError(null);
