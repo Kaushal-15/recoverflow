@@ -25,3 +25,11 @@ Use a throttled mobile Lighthouse or Chrome Performance profile against the depl
 ## Live production demo-path evidence
 
 The live URL `https://recoverflow-rho.vercel.app/dashboard` was opened in the authenticated administrator session after the performance work. The lazy dashboard resolved to the Supabase-backed workspace with 63/63 cases, merchant controls, sandbox labels, and durable recovery metrics. A representative `WEBHOOK-…` case was opened without mutation; its evidence panel displayed the Test Mode amount, recovered status, confidence, risk route, customer identifier, masked IP/region, synthetic device context, detected problem, policy reading, and the Razorpay Test Mode Payment Link outcome. Judge Mode was also launched on the preview and advanced through Signal, Gate, Act, and Record before exiting cleanly.
+
+### Explicit post-deployment evidence
+
+On the newly published Vercel release, the authenticated case detail displayed `PAYMENT MODE` as `Wallet / card mix · Test Mode`, `IP / REGION` as a masked synthetic region, `DEVICE CONTEXT` as a synthetic browser fingerprint, `PROBLEM DETECTED` as a recoverable payment interruption, and a `Policy reading` explaining that the action path is constrained by the merchant policy snapshot. The detail also showed the verified Test Mode Payment Link outcome and recovered status. This completes the production path evidence without executing a mutation.
+
+### Audit-trail proof on the newly deployed release
+
+The deployed dashboard’s selected-case content explicitly included `IMMUTABLE AUDIT TRAIL`, the bounded action set (`PAYMENT LINK FALLBACK`, `REMINDER`, and `HUMAN ESCALATION`), and `Verified webhook outcome: payment_link.paid` with a Razorpay actor/timestamp. This confirms the final audit/review evidence stage of the post-optimization production path.
