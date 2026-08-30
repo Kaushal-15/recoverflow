@@ -1,10 +1,12 @@
 import { Button } from "@/components/ui/button";
 import { useAdminAuth } from "@/contexts/AdminAuthContext";
 import { LoaderCircle, ShieldAlert } from "lucide-react";
-import { type ComponentType, useEffect } from "react";
+import { type ComponentType, type LazyExoticComponent, useEffect } from "react";
 import { useLocation } from "wouter";
 
-export function RequireAdmin({ component: Component }: { component: ComponentType }) {
+type AdminComponent = ComponentType | LazyExoticComponent<ComponentType>;
+
+export function RequireAdmin({ component: Component }: { component: AdminComponent }) {
   const { loading, isAdmin, isConfigured, error, signOut } = useAdminAuth();
   const [, setLocation] = useLocation();
 

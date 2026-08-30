@@ -88,3 +88,9 @@
 - [x] Disable the new console rail, nodes, and console-card transforms under reduced-motion preferences and rerun the accessibility check.
 - [x] Elevate the public RecoverFlow landing page with cinematic 3D scroll choreography, richer depth transitions, and stronger wow-factor visual moments.
 - [x] Validate the enhanced public experience across desktop, tablet, mobile, reduced motion, and the preserved dashboard/auth route.
+- [x] Audit RecoverFlow from a senior Razorpay Buildathon hiring-review perspective and document strengths, risks, and selection-critical fixes.
+- [x] Diagnose and reduce public landing-page lag without weakening the 3D visual identity or accessibility fallback.
+- [x] Implement only the highest-impact product/demo polish items that improve credibility, speed, and judge comprehension.
+- [x] Validate performance, responsive behavior, and the critical pitch/demo flows after the polish pass.
+- [x] Add a compact user-facing Judge Mode that guides a reviewer through Signal, Gate, Act, and Record on the public landing page, with a direct path into the live Test Mode workspace.
+- [ ] Revalidate the complete post-optimization pitch flow from landing page through authenticated workspace, representative case, and audit evidence on the newly deployed release.
