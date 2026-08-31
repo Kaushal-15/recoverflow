@@ -101,3 +101,5 @@
 - [ ] Explain and await confirmation on the safest read-only Supabase guest-demo account approach; do not implement auth changes yet.
 - [x] Verify the landing page on a narrow mobile viewport and confirm the hero heading, description, feature row, and CTA buttons do not overflow horizontally.
 - [x] Confirm the hero containment change preserves the framed layout at tablet and desktop widths.
+- [ ] Correct the visible activity-date filter placeholder between the decision-class select and `Min ₹` without changing its options, filtering logic, or position.
+- [ ] Verify the activity-date placeholder is visible at rest and remains clear when the filter is focused.
