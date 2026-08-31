@@ -1,5 +1,12 @@
 import { z } from "zod";
-import { adminProcedure, router } from "../_core/trpc";
+import { adminProcedure, protectedProcedure, router } from "../_core/trpc";
+import { TRPCError } from "@trpc/server";
+
+function enforceAdminMutation(ctx: { user?: { role?: string } | null }) {
+  if (ctx.user?.role !== "admin") {
+    throw new TRPCError({ code: "FORBIDDEN", message: "Guest demo account is read-only." });
+  }
+}
 import type { RecoveryCandidate, RecoveryPolicyInput } from "../../shared/recovery";
 import { planRecovery } from "../recovery/orchestrator";
 import { SandboxPaymentLinkAdapter } from "../recovery/paymentLinkAdapter";
@@ -43,7 +50,7 @@ async function hydrateSupabaseCaseForMutation(user: { id: number | string; email
 const demoPolicy: RecoveryPolicyInput = simulationPolicy;
 
 export const recoveryRouter = router({
-  overview: adminProcedure.query(async ({ ctx }) => {
+  overview: protectedProcedure.query(async ({ ctx }) => {
     if (typeof ctx.user?.id === "string") {
       const user = { id: ctx.user.id, email: ctx.user.email, name: ctx.user.name };
       await bootstrapSupabaseRecoveryWorkspace(user);
@@ -99,13 +106,14 @@ export const recoveryRouter = router({
     receipts: sandbox.receipts,
     };
   }),
-  previewManualRecovery: adminProcedure.input(z.object({ caseId: z.string() })).mutation(async ({ input, ctx }) => {
+  previewManualRecovery: protectedProcedure.input(z.object({ caseId: z.string() })).mutation(async ({ input, ctx }) => {
+    enforceAdminMutation(ctx);
     await hydrateSupabaseCaseForMutation(ctx.user, input.caseId);
     const result = await runManualRecovery(input.caseId);
     await persistForAuthenticatedMerchant(ctx.user, input.caseId);
     return result;
   }),
-  policy: adminProcedure.query(async ({ ctx }) => {
+  policy: protectedProcedure.query(async ({ ctx }) => {
     if (typeof ctx.user?.id !== "string") return getSandboxPolicy();
     const user = { id: ctx.user.id, email: ctx.user.email, name: ctx.user.name };
     await bootstrapSupabaseRecoveryWorkspace(user);
@@ -113,7 +121,7 @@ export const recoveryRouter = router({
     if (!persisted) throw new Error("Supabase recovery workspace is not configured");
     return persisted.policy;
   }),
-  updatePolicy: adminProcedure.input(z.object({
+  updatePolicy: protectedProcedure.input(z.object({
     eligibleFailureTypes: z.array(z.enum(["TEMPORARY_DECLINE", "CUSTOMER_FRICTION", "INSUFFICIENT_CONTEXT", "UNSUPPORTED"])).min(1),
     permittedActionTypes: z.array(z.enum(["NO_ACTION", "SIMULATED_RETRY", "PAYMENT_LINK_FALLBACK", "REMINDER", "HUMAN_ESCALATION"])).min(1),
     autoActionAmountCapPaise: z.number().int().min(1).max(500_000),
@@ -122,22 +130,25 @@ export const recoveryRouter = router({
     minimumConfidenceBps: z.number().int().min(0).max(10_000),
     reminderMaxContacts: z.number().int().min(0).max(5),
   })).mutation(async ({ input, ctx }) => {
+    enforceAdminMutation(ctx);
     const policy = updateSandboxPolicy(input);
     if (typeof ctx.user?.id === "string") await createSupabaseMerchantPolicyVersion({ id: ctx.user.id, email: ctx.user.email, name: ctx.user.name }, input);
     if (typeof ctx.user?.id === "number") await createMerchantPolicyVersion(ctx.user.id, input);
     return policy;
   }),
-  ingestSandboxEvent: adminProcedure.input(z.object({
+  ingestSandboxEvent: protectedProcedure.input(z.object({
     sourceEventId: z.string(), externalPaymentId: z.string(), amountPaise: z.number().int().positive(), customerIdentity: z.string(),
     failureType: z.enum(["TEMPORARY_DECLINE", "CUSTOMER_FRICTION", "INSUFFICIENT_CONTEXT", "UNSUPPORTED"]), consentGranted: z.boolean(),
     confidenceBps: z.number().int().min(0).max(10_000).optional(), retryCount: z.number().int().min(0).max(5).optional(),
   })).mutation(async ({ input, ctx }) => {
+    enforceAdminMutation(ctx);
     await hydrateSupabasePolicyForMutation(ctx.user);
     const result = await ingestSandboxEvent(input);
     await persistForAuthenticatedMerchant(ctx.user, result.case.id);
     return result;
   }),
-  ingestSandboxBatch: adminProcedure.input(z.object({ limit: z.number().int().min(1).max(200).default(25) })).mutation(async ({ input, ctx }) => {
+  ingestSandboxBatch: protectedProcedure.input(z.object({ limit: z.number().int().min(1).max(200).default(25) })).mutation(async ({ input, ctx }) => {
+    enforceAdminMutation(ctx);
     await hydrateSupabasePolicyForMutation(ctx.user);
     const records = buildSyntheticBatch().slice(0, input.limit).map(record => ({
       sourceEventId: record.sourceEventId, externalPaymentId: record.externalPaymentId, amountPaise: record.amountPaise,
@@ -148,17 +159,22 @@ export const recoveryRouter = router({
     if (ctx.user?.id) await Promise.all(result.results.map(item => persistForAuthenticatedMerchant(ctx.user, item.case.id)));
     return result;
   }),
-  decideApproval: adminProcedure.input(z.object({ caseId: z.string(), decision: z.enum(["APPROVE", "REJECT"]) })).mutation(async ({ input, ctx }) => {
+  decideApproval: protectedProcedure.input(z.object({ caseId: z.string(), decision: z.enum(["APPROVE", "REJECT"]) })).mutation(async ({ input, ctx }) => {
+    enforceAdminMutation(ctx);
     await hydrateSupabaseCaseForMutation(ctx.user, input.caseId);
     const result = await decideSandboxApproval(input.caseId, input.decision);
     await persistForAuthenticatedMerchant(ctx.user, input.caseId);
     return result;
   }),
-  applyOutcome: adminProcedure.input(z.object({ caseId: z.string(), outcome: z.enum(["RECOVERED", "EXPIRED", "CONFLICT"]) })).mutation(async ({ input, ctx }) => {
+  applyOutcome: protectedProcedure.input(z.object({ caseId: z.string(), outcome: z.enum(["RECOVERED", "EXPIRED", "CONFLICT"]) })).mutation(async ({ input, ctx }) => {
+    enforceAdminMutation(ctx);
     await hydrateSupabaseCaseForMutation(ctx.user, input.caseId);
     const result = applySandboxOutcome(input.caseId, input.outcome);
     await persistForAuthenticatedMerchant(ctx.user, input.caseId);
     return result;
   }),
-  runFailureScenario: adminProcedure.input(z.object({ scenario: z.enum(["DUPLICATE_EVENT", "INVALID_SIGNATURE", "EXPIRED_LINK", "CONFLICTING_OUTCOME", "MISSING_CONSENT"]) })).mutation(({ input }) => triggerSandboxFailure(input.scenario)),
+  runFailureScenario: protectedProcedure.input(z.object({ scenario: z.enum(["DUPLICATE_EVENT", "INVALID_SIGNATURE", "EXPIRED_LINK", "CONFLICTING_OUTCOME", "MISSING_CONSENT"]) })).mutation(({ input, ctx }) => {
+    enforceAdminMutation(ctx);
+    return triggerSandboxFailure(input.scenario);
+  }),
 });
