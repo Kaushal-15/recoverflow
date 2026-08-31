@@ -97,9 +97,9 @@
 - [x] Capture explicit review-history or audit-trail evidence from a representative case on the newly deployed Vercel dashboard and document the full production path.
 - [x] Fix only the mobile landing-page hero overflow by adding scoped containment/max-width rules to the hero section container.
 - [x] Change only the displayed recovery-action label to “Review this payment”.
-- [ ] Add an accurate visible placeholder/label to the recovery queue dropdown without changing its options or filtering logic.
+- [x] Add an accurate visible placeholder/label to the recovery queue’s activity-date filter without changing its options, filtering logic, or position.
 - [ ] Explain and await confirmation on the safest read-only Supabase guest-demo account approach; do not implement auth changes yet.
 - [x] Verify the landing page on a narrow mobile viewport and confirm the hero heading, description, feature row, and CTA buttons do not overflow horizontally.
 - [x] Confirm the hero containment change preserves the framed layout at tablet and desktop widths.
-- [ ] Correct the visible activity-date filter placeholder between the decision-class select and `Min ₹` without changing its options, filtering logic, or position.
-- [ ] Verify the activity-date placeholder is visible at rest and remains clear when the filter is focused.
+- [x] Correct the visible activity-date filter placeholder between the decision-class select and `Min ₹` without changing its options, filtering logic, or position.
+- [x] Verify the activity-date placeholder is visible at rest and remains clear when the filter is focused.
