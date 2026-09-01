@@ -7,7 +7,7 @@ export type SupabaseAdminUser = {
   email: string | null;
   name: string | null;
   loginMethod: string;
-  role: "user" | "admin";
+  role: "user" | "admin" | "demo_viewer";
   createdAt: Date;
   updatedAt: Date;
   lastSignedIn: Date;
@@ -39,7 +39,7 @@ export async function authenticateSupabaseAdmin(req: Request): Promise<SupabaseA
     .from("profiles")
     .select("id, email, display_name, role")
     .eq("id", authData.user.id)
-    .maybeSingle<{ id: string; email: string; display_name: string | null; role: "user" | "admin" }>();
+    .maybeSingle<{ id: string; email: string; display_name: string | null; role: "user" | "admin" | "demo_viewer" }>();
   if (profileError || !profile) return null;
 
   const now = new Date();
