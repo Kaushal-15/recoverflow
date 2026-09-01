@@ -3,7 +3,7 @@
 
 create extension if not exists pgcrypto;
 
-create type public.app_role as enum ('user', 'admin');
+create type public.app_role as enum ('user', 'admin', 'demo_viewer');
 create type public.recovery_source as enum ('WEBHOOK', 'BATCH', 'MANUAL');
 create type public.signature_status as enum ('VERIFIED', 'NOT_APPLICABLE', 'INVALID', 'PENDING');
 create type public.failure_type as enum ('TEMPORARY_DECLINE', 'CUSTOMER_FRICTION', 'INSUFFICIENT_CONTEXT', 'UNSUPPORTED');
@@ -258,7 +258,20 @@ as $$
   );
 $$;
 
+create function public.is_recoverflow_viewer()
+returns boolean
+language sql
+stable
+security definer set search_path = public
+as $$
+  select exists (
+    select 1 from public.profiles
+    where id = auth.uid() and role in ('admin', 'demo_viewer')
+  );
+$$;
+
 grant execute on function public.is_recoverflow_admin() to authenticated;
+grant execute on function public.is_recoverflow_viewer() to authenticated;
 
 alter table public.profiles enable row level security;
 create policy profiles_read_own on public.profiles for select to authenticated using (id = auth.uid());
@@ -275,7 +288,10 @@ begin
   ]
   loop
     execute format('alter table public.%I enable row level security', table_name);
-    execute format('create policy %I on public.%I for all to authenticated using (public.is_recoverflow_admin()) with check (public.is_recoverflow_admin())', table_name || '_admins_only', table_name);
+    execute format('create policy %I on public.%I for select to authenticated using (public.is_recoverflow_viewer())', table_name || '_viewer_select', table_name);
+    execute format('create policy %I on public.%I for insert to authenticated with check (public.is_recoverflow_admin())', table_name || '_admin_insert', table_name);
+    execute format('create policy %I on public.%I for update to authenticated using (public.is_recoverflow_admin()) with check (public.is_recoverflow_admin())', table_name || '_admin_update', table_name);
+    execute format('create policy %I on public.%I for delete to authenticated using (public.is_recoverflow_admin())', table_name || '_admin_delete', table_name);
   end loop;
 end;
 $$;

@@ -6,7 +6,7 @@ type AdminProfile = {
   id: string;
   email: string;
   display_name: string | null;
-  role: "user" | "admin";
+  role: "user" | "admin" | "demo_viewer";
 };
 
 type AdminAuthContextValue = {
@@ -15,6 +15,7 @@ type AdminAuthContextValue = {
   error: string | null;
   isConfigured: boolean;
   isAdmin: boolean;
+  isDemoViewer: boolean;
   signIn: (email: string, password: string) => Promise<string | null>;
   signOut: () => Promise<void>;
 };
@@ -42,9 +43,9 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
       .eq("id", session.user.id)
       .maybeSingle<AdminProfile>();
 
-    if (profileError || !data) {
+    if (profileError || !data || (data.role !== "admin" && data.role !== "demo_viewer")) {
       setProfile(null);
-      setError("Your account is signed in but is not provisioned for RecoverFlow. Apply the Supabase migration and grant the account an admin role.");
+      setError("Your account is signed in but is not provisioned for RecoverFlow. Apply the Supabase migration and grant the account an admin or demo_viewer role.");
     } else {
       setProfile(data);
       setError(null);
@@ -71,6 +72,7 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
     error,
     isConfigured: isSupabaseConfigured,
     isAdmin: profile?.role === "admin",
+    isDemoViewer: profile?.role === "demo_viewer",
     async signIn(email, password) {
       if (!supabase) return "Supabase authentication has not been configured.";
       const { data, error: signInError } = await supabase.auth.signInWithPassword({ email, password });
