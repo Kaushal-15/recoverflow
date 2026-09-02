@@ -55,17 +55,6 @@ The application is designed so that real sandbox integration can be enabled with
 
 The webhook handler already enforces raw-body signature verification and labels the environment as sandbox-only. It deliberately returns a configuration response until a Test Mode webhook secret is supplied, preventing an unsigned event from masquerading as a valid payment outcome.
 
-## Submission walkthrough
-
-| Time | Screen | Reviewer signal |
-|---:|---|---|
-| 0:00–0:35 | Recovery overview | A clear revenue-at-risk problem and explicitly bounded autonomy |
-| 0:35–1:20 | Merchant policy | Amount cap, consent, confidence, retry, and stopping conditions are deterministic |
-| 1:20–2:10 | Select a low-risk case | The exact `review/recover this payment` path shows a governed action plan |
-| 2:10–2:50 | Review queue | A high-value case pauses for merchant approval; an unconsented case stops safely |
-| 2:50–3:30 | Audit trail | Payment event, policy check, diagnosis, constraint validation, and actor history are visible |
-| 3:30–4:20 | Evaluation | 200-record replay, 40 held-out records, baselines, recovery rate, precision, exceptions, and stopping compliance |
-| 4:20–5:00 | Architecture document and tests | Explain the raw-body signature boundary, immutable snapshots, idempotency, and deliberate failure scenarios |
 
 ## Current scope and deliberate limitations
 
